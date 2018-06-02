@@ -2,7 +2,7 @@
 // Part of sd-inflate -- see index for copyright and info
 // tslint:disable:variable-name
 
-import { InOut, ZStatus, ZLimits, ZMsg, NumArray } from "./common";
+import { InOut, NumArray, ZLimits, ZMsg, ZStatus } from "./common";
 
 const fixed_bl = 9;
 const fixed_bd = 5;

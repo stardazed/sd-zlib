@@ -2,7 +2,7 @@
 // Part of sd-inflate -- see index for copyright and info
 // tslint:disable:variable-name
 
-import { ZBuffer, ZStreamData, ZStatus, NumArray, inflate_mask } from "./common";
+import { inflate_mask, NumArray, ZBuffer, ZStatus, ZStreamData } from "./common";
 
 // waiting for "i:"=input,
 // "o:"=output,
