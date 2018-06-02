@@ -13,11 +13,6 @@ interface Inflater {
 	 * @param data A Uint8 view of the compressed data.
 	 */
 	append(data: Uint8Array): Uint8Array;
-
-	/**
-	 * Free memory used during the decompression process. (optional)
-	 */
-	flush(): void;
 }
 
 interface InflaterConstructor {
