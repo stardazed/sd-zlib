@@ -46,74 +46,35 @@
 // tslint:disable:variable-name
 
 import { ZStatus } from "./common";
-
-// ZStream
-
-function ZStream() {
-}
-
-ZStream.prototype = {
-	inflateInit(bits: number) {
-		this.istate = new Inflate();
-		if (!bits) {
-			bits = MAX_BITS;
-		}
-		return this.istate.inflateInit(this, bits);
-	},
-
-	inflate() {
-		if (!this.istate) {
-			return ZStatus.STREAM_ERROR;
-		}
-		return this.istate.inflate(this);
-	},
-
-	inflateSync() {
-		if (!this.istate) {
-			return ZStatus.STREAM_ERROR;
-		}
-		return this.istate.inflateSync(this);
-	},
-	inflateSetDictionary(dictionary: Uint8Array, dictLength: number) {
-		if (!this.istate) {
-			return ZStatus.STREAM_ERROR;
-		}
-		return this.istate.inflateSetDictionary(this, dictionary, dictLength);
-	},
-	read_buf(start: number, size: number) {
-		return this.next_in.subarray(start, start + size);
-	}
-};
+import { ZStream } from "./zstream";
+import { Inflate } from "./inflate";
 
 // Inflater
 
 function Inflater() {
-	const that = this;
+	const inflate = new Inflate();
 	const z = new ZStream();
 	const bufsize = 16384;
-	const buf = new Uint8Array(bufsize);
 	let nomoreinput = false;
 
-	z.inflateInit();
-	z.next_out = buf;
-
-	that.append = function(data: Uint8Array) {
+	const append = function(data: Uint8Array) {
 		const buffers = [];
-		let err, bufferIndex = 0, bufferSize = 0, array;
+		let bufferIndex = 0, bufferSize = 0;
 		if (data.length === 0) {
 			return;
 		}
-		z.next_in_index = 0;
-		z.next_in = data;
-		z.avail_in = data.length;
+		z.append(data);
+
 		do {
 			z.next_out_index = 0;
 			z.avail_out = bufsize;
+
 			if ((z.avail_in === 0) && (!nomoreinput)) { // if buffer is empty and more input is available, refill it
 				z.next_in_index = 0;
 				nomoreinput = true;
 			}
-			err = z.inflate();
+
+			const err = inflate.inflate(z);
 			if (nomoreinput && (err === ZStatus.BUF_ERROR)) {
 				if (z.avail_in !== 0) {
 					throw new Error("inflating: bad input");
@@ -126,20 +87,26 @@ function Inflater() {
 			}
 			if (z.next_out_index) {
 				if (z.next_out_index === bufsize) {
-					buffers.push(new Uint8Array(buf));
+					buffers.push(new Uint8Array(z.next_out));
 				}
 				else {
-					buffers.push(new Uint8Array(buf.subarray(0, z.next_out_index)));
+					buffers.push(new Uint8Array(z.next_out.subarray(0, z.next_out_index)));
 				}
 			}
 			bufferSize += z.next_out_index;
 		} while (z.avail_in > 0 || z.avail_out === 0);
-		array = new Uint8Array(bufferSize);
+
+		// concatenate output buffers and return
+		const array = new Uint8Array(bufferSize);
 		buffers.forEach(function(chunk) {
 			array.set(chunk, bufferIndex);
 			bufferIndex += chunk.length;
 		});
 		return array;
+	};
+
+	return {
+		append
 	};
 }
 
