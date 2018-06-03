@@ -1,7 +1,8 @@
 // Inflate
 // Part of sd-inflate -- see index for copyright and info
 
-import { ZLimits, ZStreamData, ZStatus } from "./common";
+import { ZLimits, ZStatus } from "./common";
+import { ZStream } from "./zstream";
 import { InfBlocks } from "./infblocks";
 
 // preset dictionary flag in zlib header

@@ -2,7 +2,8 @@
 // Part of sd-inflate -- see index for copyright and info
 // tslint:disable:variable-name
 
-import { ZBuffer, ZStreamData, ZStatus, NumArray, inflate_mask } from "./common";
+import { ZBuffer, ZStatus, NumArray, inflate_mask } from "./common";
+import { ZStream } from "./zstream";
 
 // waiting for "i:"=input,
 // "o:"=output,
@@ -48,7 +49,7 @@ export function InfCodes() {
 	// at least ten. The ten bytes are six bytes for the longest length/
 	// distance pair plus four bytes for overloading the bit buffer.
 
-	function inflate_fast(bl: number, bd: number, tl: NumArray, tl_index: number, td: NumArray, td_index: number, s: ZBuffer, z: ZStreamData) {
+	function inflate_fast(bl: number, bd: number, tl: NumArray, tl_index: number, td: NumArray, td_index: number, s: ZBuffer, z: ZStream) {
 		let t; // temporary pointer
 		let tp; // temporary pointer
 		let tp_index; // temporary pointer
@@ -300,7 +301,7 @@ export function InfCodes() {
 		// tree = null;
 	}
 
-	function proc(s: ZBuffer, z: ZStreamData, r: ZStatus) {
+	function proc(s: ZBuffer, z: ZStream, r: ZStatus) {
 		let j; // temporary storage
 		let tindex; // temporary pointer
 		let e; // extra bits or operation

@@ -2,7 +2,8 @@
 // Part of sd-inflate -- see index for copyright and info
 // tslint:disable:variable-name
 
-import { InOut, ZStatus, ZLimits, ZMsg, NumArray } from "./common";
+import { InOut, ZStatus, ZLimits, NumArray } from "./common";
+import { ZStream } from "./zstream";
 
 const fixed_bl = 9;
 const fixed_bd = 5;
@@ -306,7 +307,7 @@ export function inflate_trees_bits(
 	bb: InOut<number>, // bits tree desired/actual depth
 	tb: InOut<number>, // bits tree result
 	hp: Int32Array, // space for trees
-	z: ZMsg // for messages
+	z: ZStream // for messages
 ) {
 	initWorkArea(19);
 	hn[0] = 0;
@@ -330,7 +331,7 @@ export function inflate_trees_dynamic(
 	tl: InOut<number>, // literal/length tree result
 	td: InOut<number>, // distance tree result
 	hp: Int32Array, // space for trees
-	z: ZMsg // for messages
+	z: ZStream // for messages
 ) {
 	// build literal/length tree
 	initWorkArea(288);

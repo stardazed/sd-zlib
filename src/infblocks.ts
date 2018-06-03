@@ -1,9 +1,10 @@
 // InfBlocks
 // Part of sd-inflate -- see index for copyright and info
 
-import { ZStatus, ZLimits, ZBuffer, inflate_mask, ZStreamData, InOut, NumArray } from "./common";
+import { ZStatus, ZLimits, ZBuffer, inflate_mask, InOut, NumArray } from "./common";
 import { InfCodes } from "./infcodes";
 import { inflate_trees_dynamic, inflate_trees_bits, inflate_trees_fixed } from "./inftree";
+import { ZStream } from "./zstream";
 
 // Table for deflate from PKZIP's appnote.txt.
 const border = [ // Order of the bit length code lengths
@@ -44,7 +45,7 @@ export class InfBlocks implements ZBuffer {
 	}
 
 	// copy as much as possible from the sliding window to the output area
-	inflate_flush(z: ZStreamData, r: ZStatus) {
+	inflate_flush(z: ZStream, r: ZStatus) {
 		let n;
 		let p;
 		let q;
@@ -106,7 +107,7 @@ export class InfBlocks implements ZBuffer {
 		return r;
 	}
 
-	proc(z: ZStreamData, r: ZStatus) {
+	proc(z: ZStream, r: ZStatus) {
 		let t: number; // temporary storage
 		let b: number; // bit buffer
 		let k: number; // bits in bit buffer

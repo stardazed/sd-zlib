@@ -1,3 +1,5 @@
+import { ZStream } from "./zstream";
+
 // Common constants and tables
 // Part of sd-inflate -- see index for copyright and info
 // tslint:disable:variable-name
@@ -31,26 +33,6 @@ export type InOut<T> = [T];
 
 export type NumArray = Int32Array | number[];
 
-export interface ZMsg {
-	msg: string | null;
-}
-
-export interface ZStreamData extends ZMsg {
-	next_in: Uint8Array;
-	next_in_index: number;
-
-	avail_in: number;
-	total_in: number;
-
-	next_out: Uint8Array;
-	next_out_index: number;
-
-	avail_out: number;
-	total_out: number;
-
-	read_buf(start: number, size: number): Uint8Array;
-}
-
 export interface ZBuffer {
 	bitk: number; // bits in bit buffer
 	bitb: number; // bit buffer
@@ -59,5 +41,5 @@ export interface ZBuffer {
 	read: number; // window read pointer
 	write: number; // window write pointer
 
-	inflate_flush(z: ZStreamData, r: ZStatus): ZStatus;
+	inflate_flush(z: ZStream, r: ZStatus): ZStatus;
 }
