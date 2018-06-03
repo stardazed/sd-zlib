@@ -29,47 +29,31 @@ export class Inflate {
 	private mode: Mode; // current inflate mode
 
 	// mode dependent information
-	method = 0; // if FLAGS, method byte
+	private method = 0; // if FLAGS, method byte
 
-	// if CHECK, check values to compare
-	was = [0]; // computed check value
-	need = 0; // stream check value
+	private dictChecksum = 0; // expected checksum of external dictionary
 
-	// if BAD, inflateSync's marker bytes count
-	marker = 0;
+	// if Mode.BAD, inflateSync's marker bytes count
+	private marker = 0;
 
 	// mode independent information
-	wbits = 0; // log2(window size) (8..15, defaults to 15)
+	private wbits = 0; // log2(window size) (8..15, defaults to 15)
 
-	blocks: InfBlocks; // current inflate_blocks state
+	private blocks: InfBlocks; // current inflate_blocks state
 
-	constructor(private z: ZStreamData, w: number) {
-		// set window size
-		if (w < ZLimits.MIN_BITS || w > ZLimits.MAX_BITS) {
+	constructor(windowSizeBits: number = ZLimits.MAX_BITS) {
+		if (windowSizeBits < ZLimits.MIN_BITS || windowSizeBits > ZLimits.MAX_BITS) {
 			throw new Error("Invalid window size");
 		}
-		this.wbits = w;
-		this.blocks = new InfBlocks(1 << w);
-
-		this.reset();
-	}
-
-	reset() {
-		const { z } = this;
-
-		z.total_in = z.total_out = 0;
-		z.msg = null;
-		this.mode = BLOCKS;
-		this.blocks.reset();
-		return ZStatus.OK;
+		this.wbits = windowSizeBits;
+		this.blocks = new InfBlocks(1 << windowSizeBits);
 		this.mode = Mode.METHOD;
 	}
 
-	inflate() {
-		const { z } = this;
+	inflate(z: ZStream) {
 		let b: number;
 
-		if (!z.next_in) {
+		if (!z || !z.next_in) {
 			return ZStatus.STREAM_ERROR;
 		}
 		const f = ZStatus.OK;
@@ -223,16 +207,13 @@ export class Inflate {
 		return ZStatus.OK;
 	}
 
-	inflateSync() {
-		const { z } = this;
-
+	inflateSync(z: ZStream) {
 		let n; // number of bytes to look at
 		let p; // pointer to bytes
 		let m; // number of marker bytes found in a row
-		let r, w; // temporaries to save total_in and total_out
 
 		// set up
-		if (!z || !this) {
+		if (!z || !z.next_in) {
 			return ZStatus.STREAM_ERROR;
 		}
 		if (this.mode !== Mode.BAD) {
@@ -269,11 +250,8 @@ export class Inflate {
 		if (m !== 4) {
 			return ZStatus.DATA_ERROR;
 		}
-		r = z.total_in;
-		w = z.total_out;
-		this.reset();
-		z.total_in = r;
-		z.total_out = w;
+
+		this.blocks.reset();
 		this.mode = Mode.BLOCKS;
 		return ZStatus.OK;
 	}
