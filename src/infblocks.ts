@@ -623,7 +623,7 @@ export class InfBlocks implements ZBuffer {
 		}
 	}
 
-	set_dictionary(d: Uint8Array, start: number, n: number) {
+	set_dictionary(d: Uint8Array | Uint8ClampedArray, start: number, n: number) {
 		this.window.set(d.subarray(start, start + n), 0);
 		this.read = this.write = n;
 	}
