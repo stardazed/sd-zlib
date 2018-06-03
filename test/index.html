@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>sd-inflate tests</title>
+	<script src="../dist/index.umd.js"></script>
+	<script src="inflate-orig.js"></script>
+</head>
+<body>
+<script>
+/**
+ * Just a quick manual testing page to check deflate results.
+ *  
+ * The text .deflate files were made by using gzip on some text files and manually
+ * changing the file format to:
+ * 0x7801, data(BLOCKS), checksum(CRC32)
+ * 
+ * The binary test file is the data part of a block from an FBX binary file
+ * containing vertex data and a checksum, in its unaltered form:
+ * 0x7801, data(BLOCKS), checksum(Adler32)
+ */ 
+
+const { crc32Bytes, adler32Bytes } = sdInflate;
+
+function testDeflateText(fileName, inflater, inflaterName) {
+	return Promise.all([fetch(`./${fileName}.deflate`), fetch(`./${fileName}.txt`)])
+		.then(([rD, rT]) => Promise.all([rD.arrayBuffer(), rT.text()]))
+		.then(([ab, text]) => {
+			// decompress data
+			const dataDeflated = new Uint8Array(ab, 0, ab.byteLength - 4);
+			const result = inflater.append(dataDeflated);
+
+			// verify checksum (Adler32)
+			const calculatedCRC32 = (crc32Bytes(result) >>> 0);
+			const dv = new DataView(ab, ab.byteLength - 4, 4);
+			const expectedCRC32 = dv.getUint32(0);
+			const checkSumOK = calculatedCRC32 === expectedCRC32;
+
+			// check decompressed data against original
+			const contents = (new TextDecoder()).decode(result);
+
+			// report success
+			const success = contents === text && checkSumOK;
+			console.info("TEST (text) done", inflaterName, fileName, expectedCRC32.toString(16), calculatedCRC32.toString(16), success);
+			return success;
+		})
+		.catch(err => {
+			console.warn("Error during test (text)", inflaterName, fileName, err);
+			return false;
+		});
+}
+
+
+function testDeflateBinary(fileName, inflater, inflaterName) {
+	return fetch(`./${fileName}.deflate`)
+		.then(rD => rD.arrayBuffer())
+		.then(ab => {
+			// decompress data
+			const dataDeflated = new Uint8Array(ab, 0, ab.byteLength - 4);
+			const result = inflater.append(dataDeflated);
+			
+			// verify checksum (Adler32)
+			const dv = new DataView(ab, ab.byteLength - 4, 4);
+			const expectedAdler = dv.getUint32(0);
+			const calculatedAdler = adler32Bytes(result);
+			const checkSumOK = calculatedAdler === expectedAdler;
+
+			// report success
+			const success = checkSumOK;
+			console.info("TEST (binary) done", inflaterName, fileName, expectedAdler.toString(16), calculatedAdler.toString(16), success);
+			return success;
+		})
+		.catch(err => {
+			console.warn("Error during test (binary)", inflaterName, fileName, err);
+			return false;
+		});
+}
+
+function runTests() {
+	Promise.all([
+		testDeflateText("simple", new Inflater(), "ORIGINAL"),
+		testDeflateText("simple", sdInflate.Inflater(), "STARDAZED"),
+
+		testDeflateText("paradiselost", new Inflater(), "ORIGINAL"),
+		testDeflateText("paradiselost", sdInflate.Inflater(), "STARDAZED"),
+
+		testDeflateBinary("vertices", new Inflater(), "ORIGINAL"),
+		testDeflateBinary("vertices", sdInflate.Inflater(), "STARDAZED")
+	])
+	.then(results => {
+		console.info("DONE");
+	});
+}
+
+runTests();
+</script>
+</body>
+</html>
