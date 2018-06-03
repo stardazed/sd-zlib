@@ -25,23 +25,28 @@ const enum Mode {
 }
 
 export class InfBlocks implements ZBuffer {
-	constructor(w: number) {
-		this.reset();
-		this.end = w;
-		this.window = new Uint8Array(w);
+	constructor(windowSize: number) {
+		this.end = windowSize;
+		this.window = new Uint8Array(windowSize);
 	}
+
+	readonly window: Uint8Array; // sliding window
+	readonly end: number; // one byte after sliding window
+	readonly codes = InfCodes();
+	readonly hufts = new Int32Array(ZLimits.MANY * 3); // single malloc for tree space
+
+	mode: Mode = Mode.TYPE;
 
 	bitk = 0; // bits in bit buffer
 	bitb = 0; // bit buffer
-	window: Uint8Array; // sliding window
-	end = 0; // one byte after sliding window
 	read = 0; // window read pointer
 	write = 0; // window write pointer
 
 	reset() {
 		this.bitk = 0;
 		this.bitb = 0;
-		this.read = this.write = 0;
+		this.read = 0;
+		this.write = 0;
 	}
 
 	// copy as much as possible from the sliding window to the output area
@@ -118,7 +123,6 @@ export class InfBlocks implements ZBuffer {
 
 		let i: number;
 
-		let mode = Mode.TYPE;
 		let left = 0; // if Mode.STORED, bytes left to copy
 
 		let table = 0; // table lengths (14 bits)
@@ -127,12 +131,10 @@ export class InfBlocks implements ZBuffer {
 		const bb: InOut<number> = [0]; // bit length tree depth
 		const tb: InOut<number> = [0]; // bit length decoding tree
 	
-		const codes = InfCodes(); // if Mode.CODES, current state
+		const codes = this.codes; // if Mode.CODES, current state
+		const hufts = this.hufts;
 	
 		let last = 0; // true if this block is the last block
-	
-		const hufts = new Int32Array(ZLimits.MANY * 3); // single malloc for tree space
-	
 
 		// copy input/output information to locals (UPDATE macro restores)
 		// {
@@ -149,7 +151,7 @@ export class InfBlocks implements ZBuffer {
 		// process input based on current state
 		// DEBUG dtree
 		while (true) {
-			switch (mode) {
+			switch (this.mode) {
 			case Mode.TYPE:
 				while (k < (3)) {
 					if (n !== 0) {
@@ -182,7 +184,7 @@ export class InfBlocks implements ZBuffer {
 					b >>>= (t);
 					k -= (t);
 					// }
-					mode = Mode.LENS; // get length of stored block
+					this.mode = Mode.LENS; // get length of stored block
 					break;
 				case 1: // fixed
 					// {
@@ -200,7 +202,7 @@ export class InfBlocks implements ZBuffer {
 					k -= (3);
 					// }
 
-					mode = Mode.CODES;
+					this.mode = Mode.CODES;
 					break;
 				case 2: // dynamic
 
@@ -209,7 +211,7 @@ export class InfBlocks implements ZBuffer {
 					k -= (3);
 					// }
 
-					mode = Mode.TABLE;
+					this.mode = Mode.TABLE;
 					break;
 				case 3: // illegal
 
@@ -217,7 +219,7 @@ export class InfBlocks implements ZBuffer {
 					b >>>= (3);
 					k -= (3);
 					// }
-					mode = Mode.BADBLOCKS;
+					this.mode = Mode.BADBLOCKS;
 					z.msg = "invalid block type";
 					r = ZStatus.DATA_ERROR;
 
@@ -249,7 +251,7 @@ export class InfBlocks implements ZBuffer {
 				}
 
 				if ((((~b) >>> 16) & 0xffff) !== (b & 0xffff)) {
-					mode = Mode.BADBLOCKS;
+					this.mode = Mode.BADBLOCKS;
 					z.msg = "invalid stored block lengths";
 					r = ZStatus.DATA_ERROR;
 
@@ -263,7 +265,7 @@ export class InfBlocks implements ZBuffer {
 				}
 				left = (b & 0xffff);
 				b = k = 0; // dump bits
-				mode = left !== 0 ? Mode.STORED : (last !== 0 ? Mode.DRY : Mode.TYPE);
+				this.mode = left !== 0 ? Mode.STORED : (last !== 0 ? Mode.DRY : Mode.TYPE);
 				break;
 			case Mode.STORED:
 				if (n === 0) {
@@ -319,7 +321,7 @@ export class InfBlocks implements ZBuffer {
 				if (left !== 0) {
 					break;
 				}
-				mode = last !== 0 ? Mode.DRY : Mode.TYPE;
+				this.mode = last !== 0 ? Mode.DRY : Mode.TYPE;
 				break;
 			case Mode.TABLE:
 
@@ -343,7 +345,7 @@ export class InfBlocks implements ZBuffer {
 
 				table = t = (b & 0x3fff);
 				if ((t & 0x1f) > 29 || ((t >> 5) & 0x1f) > 29) {
-					mode = Mode.BADBLOCKS;
+					this.mode = Mode.BADBLOCKS;
 					z.msg = "too many length or distance symbols";
 					r = ZStatus.DATA_ERROR;
 
@@ -370,7 +372,7 @@ export class InfBlocks implements ZBuffer {
 				// }
 
 				index = 0;
-				mode = Mode.BTREE;
+				this.mode = Mode.BTREE;
 				/* falls through */
 			// case Mode.BTREE:
 				while (index < 4 + (table >>> 10)) {
@@ -409,7 +411,7 @@ export class InfBlocks implements ZBuffer {
 					r = t;
 					if (r === ZStatus.DATA_ERROR) {
 						// blens = null;
-						mode = Mode.BADBLOCKS;
+						this.mode = Mode.BADBLOCKS;
 					}
 
 					this.bitb = b;
@@ -422,7 +424,7 @@ export class InfBlocks implements ZBuffer {
 				}
 
 				index = 0;
-				mode = Mode.DTREE;
+				this.mode = Mode.DTREE;
 				/* falls through */
 			// case Mode.DTREE:
 				while (true) {
@@ -495,7 +497,7 @@ export class InfBlocks implements ZBuffer {
 						i = index;
 						t = table;
 						if (i + j > 258 + (t & 0x1f) + ((t >> 5) & 0x1f) || (c === 16 && i < 1)) {
-							mode = Mode.BADBLOCKS;
+							this.mode = Mode.BADBLOCKS;
 							z.msg = "invalid bit length repeat";
 							r = ZStatus.DATA_ERROR;
 
@@ -527,7 +529,7 @@ export class InfBlocks implements ZBuffer {
 
 				if (t !== ZStatus.OK) {
 					if (t === ZStatus.DATA_ERROR) {
-						mode = Mode.BADBLOCKS;
+						this.mode = Mode.BADBLOCKS;
 					}
 					r = t;
 
@@ -541,7 +543,7 @@ export class InfBlocks implements ZBuffer {
 				}
 				codes.init(bl_[0], bd_[0], hufts, tl_[0], hufts, td_[0]);
 				// }
-				mode = Mode.CODES;
+				this.mode = Mode.CODES;
 				/* falls through */
 			case Mode.CODES:
 				this.bitb = b;
@@ -565,10 +567,10 @@ export class InfBlocks implements ZBuffer {
 				m = /* (int) */(q < this.read ? this.read - q - 1 : this.end - q);
 
 				if (last === 0) {
-					mode = Mode.TYPE;
+					this.mode = Mode.TYPE;
 					break;
 				}
-				mode = Mode.DRY;
+				this.mode = Mode.DRY;
 				/* falls through */
 			case Mode.DRY:
 				this.write = q;
@@ -584,9 +586,9 @@ export class InfBlocks implements ZBuffer {
 					this.write = q;
 					return this.inflate_flush(z, r);
 				}
-				mode = Mode.DONELOCKS;
+				this.mode = Mode.DONELOCKS;
 				/* falls through */
-			// case Mode.DONELOCKS:
+			case Mode.DONELOCKS:
 				r = ZStatus.STREAM_END;
 
 				this.bitb = b;
@@ -596,7 +598,7 @@ export class InfBlocks implements ZBuffer {
 				z.next_in_index = p;
 				this.write = q;
 				return this.inflate_flush(z, r);
-			// case Mode.BADBLOCKS:
+			case Mode.BADBLOCKS:
 				r = ZStatus.DATA_ERROR;
 
 				this.bitb = b;
