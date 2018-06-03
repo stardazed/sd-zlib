@@ -48,7 +48,7 @@ export function adler32(data: string | number[] | TypedArray | ArrayBuffer, seed
  * Make very sure that the individual elements in buf are all
  * in the UNSIGNED byte range (i.e. 0..255) otherwise the
  * result will be indeterminate. Use `adler32` for safest results.
- * @param buf Source data,
+ * @param buf Source data, an array-like of unsigned bytes
  * @param adler Optional seed for the checksum
  */
 export function adler32Bytes(buf: ArrayLike<number>, adler = 1) {
@@ -58,19 +58,6 @@ export function adler32Bytes(buf: ArrayLike<number>, adler = 1) {
 
 	let len = buf.length;
 	let offset = 0;
-
-	/* in case short lengths are provided, keep it somewhat fast */
-	if (len < 16) {
-		while (len--) {
-			adler += buf[offset++];
-			sum2 += adler;
-		}
-		if (adler >= BASE) {
-			adler -= BASE;
-		}
-		sum2 %= BASE;            /* only added so many BASE's */
-		return adler | (sum2 << 16);
-	}
 
 	/* do length NMAX blocks -- requires just one modulo operation */
 	while (len >= NMAX) {
