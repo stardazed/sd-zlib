@@ -16,8 +16,7 @@ interface Inflater {
 }
 
 interface InflaterConstructor {
-	new(): Inflater;
-	prototype: Inflater;
+	(): Inflater;
 }
 
 declare const Inflater: InflaterConstructor;
