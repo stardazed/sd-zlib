@@ -4,6 +4,7 @@
 import { ZLimits, ZStatus } from "./common";
 import { ZStream } from "./zstream";
 import { InfBlocks } from "./infblocks";
+import { adler32Bytes } from "./adler32";
 
 // preset dictionary flag in zlib header
 const PRESET_DICT = 0x20;
@@ -131,7 +132,7 @@ export class Inflate {
 
 				z.avail_in--;
 				z.total_in++;
-				this.need = ((z.next_in[z.next_in_index++] & 0xff) << 24) & 0xff000000;
+				this.dictChecksum = ((z.next_in[z.next_in_index++] & 0xff) << 24) & 0xff000000;
 				this.mode = Mode.DICT3;
 				/* falls through */
 			case Mode.DICT3:
@@ -142,7 +143,7 @@ export class Inflate {
 
 				z.avail_in--;
 				z.total_in++;
-				this.need += ((z.next_in[z.next_in_index++] & 0xff) << 16) & 0xff0000;
+				this.dictChecksum |= ((z.next_in[z.next_in_index++] & 0xff) << 16) & 0xff0000;
 				this.mode = Mode.DICT2;
 				/* falls through */
 			case Mode.DICT2:
@@ -153,7 +154,7 @@ export class Inflate {
 
 				z.avail_in--;
 				z.total_in++;
-				this.need += ((z.next_in[z.next_in_index++] & 0xff) << 8) & 0xff00;
+				this.dictChecksum |= ((z.next_in[z.next_in_index++] & 0xff) << 8) & 0xff00;
 				this.mode = Mode.DICT1;
 				/* falls through */
 			case Mode.DICT1:
@@ -164,7 +165,7 @@ export class Inflate {
 
 				z.avail_in--;
 				z.total_in++;
-				this.need += (z.next_in[z.next_in_index++] & 0xff);
+				this.dictChecksum |= (z.next_in[z.next_in_index++] & 0xff);
 				this.mode = Mode.DICT0;
 				return ZStatus.NEED_DICT;
 
@@ -198,18 +199,25 @@ export class Inflate {
 		}
 	}
 
-	inflateSetDictionary(dictionary: Uint8Array, dictLength: number) {
+	inflateSetDictionary(dictionary: Uint8Array | Uint8ClampedArray) {
 		if (this.mode !== Mode.DICT0) {
 			return ZStatus.STREAM_ERROR;
 		}
 
 		let index = 0;
-		let length = dictLength;
+		let length = dictionary.byteLength;
 
 		if (length >= (1 << this.wbits)) {
 			length = (1 << this.wbits) - 1;
-			index = dictLength - length;
+			index = dictionary.byteLength - length;
 		}
+
+		// verify dictionary checksum
+		const checksum = adler32Bytes(dictionary);
+		if (checksum !== this.dictChecksum) {
+			throw new Error("Dictionary checksum mismatch");
+		}
+
 		this.blocks.set_dictionary(dictionary, index, length);
 		this.mode = Mode.BLOCKS;
 		return ZStatus.OK;
