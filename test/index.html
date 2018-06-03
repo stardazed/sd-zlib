@@ -20,7 +20,7 @@
  * 0x7801, data(BLOCKS), checksum(Adler32)
  */ 
 
-const { crc32Bytes, adler32Bytes } = sdInflate;
+const { crc32BytesLittle: crc32Bytes, adler32Bytes } = sdInflate;
 
 function testDeflateText(fileName, inflater, inflaterName) {
 	return Promise.all([fetch(`./${fileName}.deflate`), fetch(`./${fileName}.txt`)])

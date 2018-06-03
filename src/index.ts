@@ -112,3 +112,4 @@ function Inflater() {
 
 export { Inflater };
 export * from "./adler32";
+export * from "./crc32";
