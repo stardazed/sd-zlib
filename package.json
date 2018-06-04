@@ -6,8 +6,9 @@
 		"type": "git",
 		"url": "https://github.com/stardazed/sd-inflate.git"
 	},
+	"homepage": "https://github.com/stardazed/sd-inflate",
 	"license": "Zlib",
-	"main": "dist/index.umd.js",
+	"browser": "dist/index.esm.js",
 	"module": "dist/index.esm.js",
 	"types": "dist/index.d.ts",
 	"devDependencies": {

@@ -12,13 +12,6 @@ export default [
 				format: "es",
 				sourcemap: false,
 				freeze: false
-			},
-			{
-				file: "dist/index.umd.js",
-				name: "sdInflate",
-				format: "umd",
-				sourcemap: false,
-				freeze: false
 			}
 		],
 		plugins: [
