@@ -19,23 +19,28 @@ const NMAX = 5552;
  * @param data Source data, a string, array, TypedArray or ArrayBuffer
  * @param adler Optional seed for the checksum
  */
-export function adler32(data: string | number[] | TypedArray | ArrayBuffer, seed = 1) {
+export function adler32(data: string | number[] | TypedArray | DataView | ArrayBuffer, seed = 1) {
 	let buf: ArrayLike<number>;
-	if (typeof data === "string") {
+	if (Array.isArray(data)) {
+		buf = data;
+	}
+	else if (typeof data === "string") {
+		// while this will copy the entire string, it is unavoidable for this
+		// use case and this function is meant as a quick helper. If you are
+		// worried about speed, use (typed) arrays.
 		const encoder = new TextEncoder();
 		buf = encoder.encode(data);
 	}
-	else if ("buffer" in data) {
-		if ((data as any).constructor !== Uint8Array && (data as any).constructor !== Uint8ClampedArray) {
-			// create an unsigned byte view over the existing view
-			buf = new Uint8Array(data.buffer, data.byteOffset, data.length * data.BYTES_PER_ELEMENT);
-		}
-		else {
-			buf = data;
-		}
+	else if (data instanceof DataView) {
+		buf = new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
 	}
-	else if ("byteLength" in data) {
+	else if (data instanceof ArrayBuffer) {
+		// create a view on the ArrayBuffer
 		buf = new Uint8Array(data);
+	}
+	else if ((! (data instanceof Uint8Array || data instanceof Uint8ClampedArray))) {
+		// create an unsigned byte view over the existing view
+		buf = new Uint8Array(data.buffer, data.byteOffset, data.length * data.BYTES_PER_ELEMENT);
 	}
 	else {
 		buf = data;
@@ -47,7 +52,7 @@ export function adler32(data: string | number[] | TypedArray | ArrayBuffer, seed
  * Compute the Adler-32 checksum of a sequence of unsigned bytes.
  * Make very sure that the individual elements in buf are all
  * in the UNSIGNED byte range (i.e. 0..255) otherwise the
- * result will be indeterminate. Use `adler32` for safest results.
+ * result will be indeterminate.
  * @param buf Source data, an array-like of unsigned bytes
  * @param adler Optional seed for the checksum
  */
