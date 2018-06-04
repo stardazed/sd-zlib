@@ -2,6 +2,10 @@
 # yarn lockfile v1
 
 
+"@stardazed/adler32@^0.1.0":
+  version "0.1.0"
+  resolved "https://registry.yarnpkg.com/@stardazed/adler32/-/adler32-0.1.0.tgz#2efb9c052f1d88b29855f632fbc7ce4f58b1a72a"
+
 "@types/estree@0.0.39":
   version "0.0.39"
   resolved "https://registry.yarnpkg.com/@types/estree/-/estree-0.0.39.tgz#e177e699ee1b8c22d23174caaa7422644389509f"

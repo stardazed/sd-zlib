@@ -15,5 +15,8 @@
 		"rollup-plugin-node-resolve": "^3.3.0",
 		"rollup-plugin-typescript2": "^0.14.0",
 		"typescript": "^2.9.1"
+	},
+	"dependencies": {
+		"@stardazed/adler32": "^0.1.0"
 	}
 }
