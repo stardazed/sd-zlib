@@ -76,15 +76,20 @@ export function crc32Simple(buf: ArrayLike<number>, crc = 0) {
 
 ========================================================================= */
 export function crc32BytesLittle(buf: Uint8Array | Uint8ClampedArray, crc = 0) {
-	let c = ~crc >>> 0;
+	let c = ~crc;
 	let offset = buf.byteOffset;
 	let position = 0;
 	let len = buf.byteLength;
 
+	const table0 = crcTables[0];
+	const table1 = crcTables[1];
+	const table2 = crcTables[2];
+	const table3 = crcTables[3];
+
 	// The ArrayView may be offset to a non-uint32 offset on the
 	// underlying buffer, process any initial bytes separately first
 	while (len && (offset & 3)) {
-		c = crcTables[0][(c ^ buf[position++]) & 0xff] ^ (c >>> 8);
+		c = table0[(c ^ buf[position++]) & 0xff] ^ (c >>> 8);
 		len--;
 		offset++;
 	}
@@ -95,39 +100,39 @@ export function crc32BytesLittle(buf: Uint8Array | Uint8ClampedArray, crc = 0) {
 	let pos4 = 0;
 	while (len >= 32) {
 		c ^= buf4[pos4++];
-		c = crcTables[3][c & 0xff] ^ crcTables[2][(c >>> 8) & 0xff] ^ crcTables[1][(c >>> 16) & 0xff] ^ crcTables[0][c >>> 24];
+		c = table3[c & 0xff] ^ table2[(c >>> 8) & 0xff] ^ table1[(c >>> 16) & 0xff] ^ table0[c >>> 24];
 		c ^= buf4[pos4++];
-		c = crcTables[3][c & 0xff] ^ crcTables[2][(c >>> 8) & 0xff] ^ crcTables[1][(c >>> 16) & 0xff] ^ crcTables[0][c >>> 24];
+		c = table3[c & 0xff] ^ table2[(c >>> 8) & 0xff] ^ table1[(c >>> 16) & 0xff] ^ table0[c >>> 24];
 		c ^= buf4[pos4++];
-		c = crcTables[3][c & 0xff] ^ crcTables[2][(c >>> 8) & 0xff] ^ crcTables[1][(c >>> 16) & 0xff] ^ crcTables[0][c >>> 24];
+		c = table3[c & 0xff] ^ table2[(c >>> 8) & 0xff] ^ table1[(c >>> 16) & 0xff] ^ table0[c >>> 24];
 		c ^= buf4[pos4++];
-		c = crcTables[3][c & 0xff] ^ crcTables[2][(c >>> 8) & 0xff] ^ crcTables[1][(c >>> 16) & 0xff] ^ crcTables[0][c >>> 24];
+		c = table3[c & 0xff] ^ table2[(c >>> 8) & 0xff] ^ table1[(c >>> 16) & 0xff] ^ table0[c >>> 24];
 
 		c ^= buf4[pos4++];
-		c = crcTables[3][c & 0xff] ^ crcTables[2][(c >>> 8) & 0xff] ^ crcTables[1][(c >>> 16) & 0xff] ^ crcTables[0][c >>> 24];
+		c = table3[c & 0xff] ^ table2[(c >>> 8) & 0xff] ^ table1[(c >>> 16) & 0xff] ^ table0[c >>> 24];
 		c ^= buf4[pos4++];
-		c = crcTables[3][c & 0xff] ^ crcTables[2][(c >>> 8) & 0xff] ^ crcTables[1][(c >>> 16) & 0xff] ^ crcTables[0][c >>> 24];
+		c = table3[c & 0xff] ^ table2[(c >>> 8) & 0xff] ^ table1[(c >>> 16) & 0xff] ^ table0[c >>> 24];
 		c ^= buf4[pos4++];
-		c = crcTables[3][c & 0xff] ^ crcTables[2][(c >>> 8) & 0xff] ^ crcTables[1][(c >>> 16) & 0xff] ^ crcTables[0][c >>> 24];
+		c = table3[c & 0xff] ^ table2[(c >>> 8) & 0xff] ^ table1[(c >>> 16) & 0xff] ^ table0[c >>> 24];
 		c ^= buf4[pos4++];
-		c = crcTables[3][c & 0xff] ^ crcTables[2][(c >>> 8) & 0xff] ^ crcTables[1][(c >>> 16) & 0xff] ^ crcTables[0][c >>> 24];
+		c = table3[c & 0xff] ^ table2[(c >>> 8) & 0xff] ^ table1[(c >>> 16) & 0xff] ^ table0[c >>> 24];
 		len -= 32;
 	}
 	while (len >= 4) {
 		c ^= buf4[pos4++];
-		c = crcTables[3][c & 0xff] ^ crcTables[2][(c >>> 8) & 0xff] ^ crcTables[1][(c >>> 16) & 0xff] ^ crcTables[0][c >>> 24];
+		c = table3[c & 0xff] ^ table2[(c >>> 8) & 0xff] ^ table1[(c >>> 16) & 0xff] ^ table0[c >>> 24];
 		len -= 4;
 	}
 
 	if (len) {
 		position += pos4 * 4; // move the byte pointer to the position after the 4-byte blocks
 		do {
-			c = crcTables[0][(c ^ buf[position++]) & 0xff] ^ (c >>> 8);
+			c = table0[(c ^ buf[position++]) & 0xff] ^ (c >>> 8);
 		} while (--len);
 	}
 
-	c = ~c >>> 0;
-	return swap32(c);
+	c = ~c;
+	return c;
 }
 
 
@@ -139,16 +144,21 @@ export function crc32BytesLittle(buf: Uint8Array | Uint8ClampedArray, crc = 0) {
 
 ========================================================================= */
 export function crc32BytesBig(buf: Uint8Array | Uint8ClampedArray, crc = 0) {
-	let c = (~swap32(crc)) >>> 0;
+	let c = ~swap32(crc);
 
 	let offset = buf.byteOffset;
 	let position = 0;
 	let len = buf.byteLength;
 
+	const table4 = crcTables[4];
+	const table5 = crcTables[5];
+	const table6 = crcTables[6];
+	const table7 = crcTables[7];
+
 	// The ArrayView may be offset to a non-uint32 offset on the
 	// underlying buffer, process any initial bytes separately first
 	while (len && (offset & 3)) {
-		c = crcTables[4][(c >>> 24) ^ buf[position++]] ^ (c << 8);
+		c = table4[(c >>> 24) ^ buf[position++]] ^ (c << 8);
 		len--;
 		offset++;
 	}
@@ -157,34 +167,34 @@ export function crc32BytesBig(buf: Uint8Array | Uint8ClampedArray, crc = 0) {
 	let pos4 = 0;
 	while (len >= 32) {
 		c ^= buf4[pos4++];
-		c = crcTables[4][c & 0xff] ^ crcTables[5][(c >>> 8) & 0xff] ^ crcTables[6][(c >>> 16) & 0xff] ^ crcTables[7][c >>> 24];
+		c = table4[c & 0xff] ^ table5[(c >>> 8) & 0xff] ^ table6[(c >>> 16) & 0xff] ^ table7[c >>> 24];
 		c ^= buf4[pos4++];
-		c = crcTables[4][c & 0xff] ^ crcTables[5][(c >>> 8) & 0xff] ^ crcTables[6][(c >>> 16) & 0xff] ^ crcTables[7][c >>> 24];
+		c = table4[c & 0xff] ^ table5[(c >>> 8) & 0xff] ^ table6[(c >>> 16) & 0xff] ^ table7[c >>> 24];
 		c ^= buf4[pos4++];
-		c = crcTables[4][c & 0xff] ^ crcTables[5][(c >>> 8) & 0xff] ^ crcTables[6][(c >>> 16) & 0xff] ^ crcTables[7][c >>> 24];
+		c = table4[c & 0xff] ^ table5[(c >>> 8) & 0xff] ^ table6[(c >>> 16) & 0xff] ^ table7[c >>> 24];
 		c ^= buf4[pos4++];
-		c = crcTables[4][c & 0xff] ^ crcTables[5][(c >>> 8) & 0xff] ^ crcTables[6][(c >>> 16) & 0xff] ^ crcTables[7][c >>> 24];
+		c = table4[c & 0xff] ^ table5[(c >>> 8) & 0xff] ^ table6[(c >>> 16) & 0xff] ^ table7[c >>> 24];
 
 		c ^= buf4[pos4++];
-		c = crcTables[4][c & 0xff] ^ crcTables[5][(c >>> 8) & 0xff] ^ crcTables[6][(c >>> 16) & 0xff] ^ crcTables[7][c >>> 24];
+		c = table4[c & 0xff] ^ table5[(c >>> 8) & 0xff] ^ table6[(c >>> 16) & 0xff] ^ table7[c >>> 24];
 		c ^= buf4[pos4++];
-		c = crcTables[4][c & 0xff] ^ crcTables[5][(c >>> 8) & 0xff] ^ crcTables[6][(c >>> 16) & 0xff] ^ crcTables[7][c >>> 24];
+		c = table4[c & 0xff] ^ table5[(c >>> 8) & 0xff] ^ table6[(c >>> 16) & 0xff] ^ table7[c >>> 24];
 		c ^= buf4[pos4++];
-		c = crcTables[4][c & 0xff] ^ crcTables[5][(c >>> 8) & 0xff] ^ crcTables[6][(c >>> 16) & 0xff] ^ crcTables[7][c >>> 24];
+		c = table4[c & 0xff] ^ table5[(c >>> 8) & 0xff] ^ table6[(c >>> 16) & 0xff] ^ table7[c >>> 24];
 		c ^= buf4[pos4++];
-		c = crcTables[4][c & 0xff] ^ crcTables[5][(c >>> 8) & 0xff] ^ crcTables[6][(c >>> 16) & 0xff] ^ crcTables[7][c >>> 24];
+		c = table4[c & 0xff] ^ table5[(c >>> 8) & 0xff] ^ table6[(c >>> 16) & 0xff] ^ table7[c >>> 24];
 		len -= 32;
 	}
 	while (len >= 4) {
 		c ^= buf4[pos4++];
-		c = crcTables[4][c & 0xff] ^ crcTables[5][(c >>> 8) & 0xff] ^ crcTables[6][(c >>> 16) & 0xff] ^ crcTables[7][c >>> 24];
+		c = table4[c & 0xff] ^ table5[(c >>> 8) & 0xff] ^ table6[(c >>> 16) & 0xff] ^ table7[c >>> 24];
 		len -= 4;
 	}
 
 	if (len) {
 		position += pos4 * 4; // move the byte pointer to the position after the 4-byte blocks
 		do {
-			c = crcTables[4][(c >>> 24) ^ buf[position++]] ^ (c << 8);
+			c = table4[(c >>> 24) ^ buf[position++]] ^ (c << 8);
 		} while (--len);
 	}
 
