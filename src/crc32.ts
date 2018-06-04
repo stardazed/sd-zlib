@@ -2,15 +2,44 @@
  * crc32 -- compute the CRC32 checksum of a data stream
  * Copyright (C) 1995-2006, 2010, 2011, 2012, 2016 Mark Adler
  * Converted to TypeScript by Arthur Langereis (@zenmumbler)
- * from crc32.c/h, which can be found at:
+ * from crc32.c, which can be found at:
  * https://github.com/madler/zlib/blob/v1.2.11/crc32.c
  */
 
-import { crcTables } from "./crc32-tables";
-
 const swap32 = (q: number) =>
-	((((q) >>> 24) & 0xff) + (((q) >>> 8) & 0xff00) +
-	(((q) & 0xff00) << 8) + (((q) & 0xff) << 24)) >>> 0;
+	(((q >>> 24) & 0xff) | ((q >>> 8) & 0xff00) |
+	((q & 0xff00) << 8) | ((q & 0xff) << 24)) >>> 0;
+
+function makeCRCTables() {
+	const tables: Uint32Array[] = new Array(8).fill(256).map(c => new Uint32Array(c));
+
+	// generate a crc for every 8-bit value
+	for (let n = 0; n < 256; n++) {
+		let c = n;
+		for (let k = 0; k < 8; k++) {
+			c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+		}
+		tables[0][n] = c;
+		tables[4][n] = swap32(c);
+	}
+
+	// generate crc for each value followed by one, two, and three zeros,
+	// and then the byte reversal of those as well as the first table
+	for (let n = 0; n < 256; n++) {
+		let c = tables[0][n];
+		for (let k = 1; k < 4; k++) {
+			c = tables[0][c & 0xff] ^ (c >>> 8);
+			tables[k][n] = c;
+			tables[k + 4][n] = swap32(c);
+		}
+	}
+
+	return tables;
+}
+
+const crcTables = makeCRCTables();
+
+
 export function crc32Simple(buf: ArrayLike<number>, crc = 0) {
 	let len = buf.length;
 	let position = 0;
