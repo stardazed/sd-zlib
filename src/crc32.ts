@@ -1,5 +1,5 @@
 /**
- * crc32 -- compute the CRC32 checksum of a data stream
+ * crc32 -- compute the CRC-32 checksum of a data stream
  * Copyright (C) 1995-2006, 2010, 2011, 2012, 2016 Mark Adler
  * Converted to TypeScript by Arthur Langereis (@zenmumbler)
  * from crc32.c, which can be found at:
@@ -8,37 +8,55 @@
 
 import { swap32, TypedArray } from "./common";
 
-function makeCRCTables() {
-	const tables: Uint32Array[] = new Array(8).fill(256).map(c => new Uint32Array(c));
-
-	// generate a crc for every 8-bit value
-	for (let n = 0; n < 256; n++) {
-		let c = n;
-		for (let k = 0; k < 8; k++) {
-			c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
-		}
-		tables[0][n] = c;
-		tables[4][n] = swap32(c);
+/**
+ * Compute the CRC-32 checksum of a source.
+ * This method will do its best to get a correct stream of unsigned bytes out
+ * of the specified input, but take care when passing in basic arrays.
+ * Use `crc32Bytes` directly if you have an Uint8 TypedArray.
+ * @param data Source data, a string, array, TypedArray, DataView or ArrayBuffer
+ * @param crc Optional seed for the checksum
+ */
+export function crc32(data: string | number[] | TypedArray | DataView | ArrayBuffer, crc = 0) {
+	if (Array.isArray(data)) {
+		// do not wrap array in a TypedArray as it will create a copy
+		// of the full contents, which could be very large.
+		return crc32Basic(data, crc);
 	}
 
-	// generate crc for each value followed by one, two, and three zeros,
-	// and then the byte reversal of those as well as the first table
-	for (let n = 0; n < 256; n++) {
-		let c = tables[0][n];
-		for (let k = 1; k < 4; k++) {
-			c = tables[0][c & 0xff] ^ (c >>> 8);
-			tables[k][n] = c;
-			tables[k + 4][n] = swap32(c);
-		}
+	let buf: Uint8Array | Uint8ClampedArray;
+	if (typeof data === "string") {
+		// while this will copy the entire string, it is unavoidable for this
+		// use case and this function is meant as a quick helper. If you are
+		// worried about speed, use typed arrays.
+		const encoder = new TextEncoder();
+		buf = encoder.encode(data);
 	}
-
-	return tables;
+	else if (data instanceof DataView) {
+		buf = new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
+	}
+	else if (data instanceof ArrayBuffer) {
+		// create a view on the ArrayBuffer
+		buf = new Uint8Array(data);
+	}
+	else if ((! (data instanceof Uint8Array || data instanceof Uint8ClampedArray))) {
+		// create an unsigned byte view over the existing view
+		buf = new Uint8Array(data.buffer, data.byteOffset, data.length * data.BYTES_PER_ELEMENT);
+	}
+	else {
+		buf = data;
+	}
+	return crc32Bytes(buf, crc);
 }
 
-const crcTables = makeCRCTables();
-
-
-export function crc32Simple(buf: ArrayLike<number>, crc = 0) {
+/**
+ * Compute the CRC-32 checksum of an array of numbers.
+ * Make very sure that the individual elements in buf are all in the
+ * UNSIGNED byte range (i.e. 0..255) otherwise the result will be indeterminate
+ * Use `crc32Bytes` if you have typed array data or a buffer.
+ * @param data Source array
+ * @param crc Optional seed for the checksum
+ */
+export function crc32Basic(buf: ArrayLike<number>, crc = 0) {
 	let len = buf.length;
 	let position = 0;
 	const table = crcTables[0];
@@ -65,15 +83,33 @@ export function crc32Simple(buf: ArrayLike<number>, crc = 0) {
 	return ~crc;
 }
 
+/**
+ * This checks for the endian-ness of the current platform.
+ * On LE, the byte order will be [1, 0, 0, 0]
+ * On BE, the byte order will be [0, 0, 0, 1]
+ */
+const endian = new Uint32Array([1]);
+const endianCheck = new Uint8Array(endian.buffer, 0, 1)[0];
 
-/* =========================================================================
-#define DOLIT4 c ^= *buf4++; \
-				c = crcTables[3][c & 0xff] ^ crcTables[2][(c >>> 8) & 0xff] ^ \
-						crcTables[1][(c >>> 16) & 0xff] ^ crcTables[0][c >>> 24]
-#define DOLIT32 DOLIT4; DOLIT4; DOLIT4; DOLIT4; DOLIT4; DOLIT4; DOLIT4; DOLIT4
+/**
+ * Compute the CRC-32 checksum of a sequence of unsigned bytes.
+ * Use `crc32` if you have data in a different container, like
+ * strings or plain arrays.
+ * @param buf Source data, an Uint8(Clamped)Array
+ * @param crc Optional seed for the checksum
+ */
+const crc32Bytes = (endianCheck === 1) ? crc32BytesLittle : crc32BytesBig;
+export { crc32Bytes };
 
-========================================================================= */
-export function crc32BytesLittle(buf: Uint8Array | Uint8ClampedArray, crc = 0) {
+
+/**
+ * Compute the CRC-32 checksum of a sequence of unsigned bytes.
+ * This is the implementation of `crc32Bytes` for little-endian platforms.
+ * @param buf Source data, an array-like of unsigned bytes
+ * @param crc Optional seed for the checksum
+ * @internal
+ */
+function crc32BytesLittle(buf: Uint8Array | Uint8ClampedArray, crc = 0) {
 	let c = ~crc;
 	let offset = buf.byteOffset;
 	let position = 0;
@@ -133,15 +169,14 @@ export function crc32BytesLittle(buf: Uint8Array | Uint8ClampedArray, crc = 0) {
 	return c;
 }
 
-
-/* =========================================================================
-#define DOBIG4 c ^= *buf4++; \
-				c = crcTables[4][c & 0xff] ^ crcTables[5][(c >>> 8) & 0xff] ^ \
-						crcTables[6][(c >>> 16) & 0xff] ^ crcTables[7][c >>> 24]
-#define DOBIG32 DOBIG4; DOBIG4; DOBIG4; DOBIG4; DOBIG4; DOBIG4; DOBIG4; DOBIG4
-
-========================================================================= */
-export function crc32BytesBig(buf: Uint8Array | Uint8ClampedArray, crc = 0) {
+/**
+ * Compute the CRC-32 checksum of a sequence of unsigned bytes.
+ * This is the implementation of `crc32Bytes` for big-endian platforms.
+ * @param buf Source data, an array-like of unsigned bytes
+ * @param crc Optional seed for the checksum
+ * @internal
+ */
+function crc32BytesBig(buf: Uint8Array | Uint8ClampedArray, crc = 0) {
 	let c = ~swap32(crc);
 
 	let offset = buf.byteOffset;
@@ -200,9 +235,36 @@ export function crc32BytesBig(buf: Uint8Array | Uint8ClampedArray, crc = 0) {
 	return swap32(c);
 }
 
-// Platform endian test
-const endian = new Uint32Array([1]);
-const endianCheck = new Uint8Array(endian.buffer, 0, 1)[0];
+/**
+ * Precompute a set of tables used for speedy calculation of
+ * CRC-32 values for both little and big-endian architectures.
+ * @internal
+ */
+function makeCRCTables() {
+	const tables: Uint32Array[] = new Array(8).fill(256).map(c => new Uint32Array(c));
 
-const crc32Bytes = (endianCheck === 1) ? crc32BytesLittle : crc32BytesBig;
-export { crc32Bytes };
+	// generate a crc for every 8-bit value
+	for (let n = 0; n < 256; n++) {
+		let c = n;
+		for (let k = 0; k < 8; k++) {
+			c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+		}
+		tables[0][n] = c;
+		tables[4][n] = swap32(c);
+	}
+
+	// generate crc for each value followed by one, two, and three zeros,
+	// and then the byte reversal of those as well as the first table
+	for (let n = 0; n < 256; n++) {
+		let c = tables[0][n];
+		for (let k = 1; k < 4; k++) {
+			c = tables[0][c & 0xff] ^ (c >>> 8);
+			tables[k][n] = c;
+			tables[k + 4][n] = swap32(c);
+		}
+	}
+
+	return tables;
+}
+
+const crcTables = makeCRCTables();
