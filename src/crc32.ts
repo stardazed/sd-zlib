@@ -11,6 +11,33 @@ import { crcTables } from "./crc32-tables";
 const swap32 = (q: number) =>
 	((((q) >>> 24) & 0xff) + (((q) >>> 8) & 0xff00) +
 	(((q) & 0xff00) << 8) + (((q) & 0xff) << 24)) >>> 0;
+export function crc32Simple(buf: ArrayLike<number>, crc = 0) {
+	let len = buf.length;
+	let position = 0;
+	const table = crcTables[0];
+
+	crc = ~crc;
+	while (len >= 8) {
+		crc = table[(crc ^ buf[position++]) & 0xff] ^ (crc >>> 8);
+		crc = table[(crc ^ buf[position++]) & 0xff] ^ (crc >>> 8);
+		crc = table[(crc ^ buf[position++]) & 0xff] ^ (crc >>> 8);
+		crc = table[(crc ^ buf[position++]) & 0xff] ^ (crc >>> 8);
+
+		crc = table[(crc ^ buf[position++]) & 0xff] ^ (crc >>> 8);
+		crc = table[(crc ^ buf[position++]) & 0xff] ^ (crc >>> 8);
+		crc = table[(crc ^ buf[position++]) & 0xff] ^ (crc >>> 8);
+		crc = table[(crc ^ buf[position++]) & 0xff] ^ (crc >>> 8);
+
+		len -= 8;
+	}
+	if (len) {
+		do {
+			crc = table[(crc ^ buf[position++]) & 0xff] ^ (crc >>> 8);
+		} while (--len);
+	}
+	return ~crc;
+}
+
 
 /* =========================================================================
 #define DOLIT4 c ^= *buf4++; \
