@@ -49,8 +49,6 @@ import { ZStatus } from "./common";
 import { ZStream } from "./zstream";
 import { Inflate } from "./inflate";
 
-// Inflater
-
 function Inflater() {
 	const inflate = new Inflate();
 	const z = new ZStream();
