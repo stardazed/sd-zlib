@@ -20,7 +20,7 @@
  * 0x7801, data(BLOCKS), checksum(Adler32)
  */ 
 
-const { crc32BytesLittle: crc32Bytes, adler32Bytes } = sdInflate;
+const { crc32Bytes, adler32Bytes } = sdInflate;
 
 function testDeflateText(fileName, inflater, inflaterName) {
 	return Promise.all([fetch(`./${fileName}.deflate`), fetch(`./${fileName}.txt`)])
@@ -33,7 +33,7 @@ function testDeflateText(fileName, inflater, inflaterName) {
 			// verify checksum (Adler32)
 			const calculatedCRC32 = (crc32Bytes(result) >>> 0);
 			const dv = new DataView(ab, ab.byteLength - 4, 4);
-			const expectedCRC32 = dv.getUint32(0);
+			const expectedCRC32 = dv.getUint32(0, true);
 			const checkSumOK = calculatedCRC32 === expectedCRC32;
 
 			// check decompressed data against original
@@ -61,7 +61,9 @@ function testDeflateBinary(fileName, inflater, inflaterName) {
 			
 			// verify checksum (Adler32)
 			const dv = new DataView(ab, ab.byteLength - 4, 4);
-			const expectedAdler = dv.getUint32(0);
+			// the adler checksum in a zlib package is stored in big-endian, see zlib reading it here:
+			// https://github.com/madler/zlib/blob/v1.2.11/inflate.c#L839
+			const expectedAdler = dv.getUint32(0, false);
 			const calculatedAdler = adler32Bytes(result);
 			const checkSumOK = calculatedAdler === expectedAdler;
 
