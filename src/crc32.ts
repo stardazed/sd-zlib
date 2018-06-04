@@ -201,3 +201,10 @@ export function crc32BytesBig(buf: Uint8Array | Uint8ClampedArray, crc = 0) {
 	c = ~c;
 	return swap32(c);
 }
+
+// Platform endian test
+const endian = new Uint32Array([1]);
+const endianCheck = new Uint8Array(endian.buffer, 0, 1)[0];
+
+const crc32Bytes = (endianCheck === 1) ? crc32BytesLittle : crc32BytesBig;
+export { crc32Bytes };
