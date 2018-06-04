@@ -6,9 +6,7 @@
  * https://github.com/madler/zlib/blob/v1.2.11/crc32.c
  */
 
-const swap32 = (q: number) =>
-	(((q >>> 24) & 0xff) | ((q >>> 8) & 0xff00) |
-	((q & 0xff00) << 8) | ((q & 0xff) << 24)) >>> 0;
+import { swap32, TypedArray } from "./common";
 
 function makeCRCTables() {
 	const tables: Uint32Array[] = new Array(8).fill(256).map(c => new Uint32Array(c));

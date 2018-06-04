@@ -1,8 +1,10 @@
-import { ZStream } from "./zstream";
-
 // Common constants and tables
 // Part of sd-inflate -- see index for copyright and info
 // tslint:disable:variable-name
+
+import { ZStream } from "./zstream";
+
+export type TypedArray = Uint8Array | Uint8ClampedArray | Int8Array | Uint16Array | Int16Array | Uint32Array | Int32Array | Float32Array | Float64Array;
 
 export const enum ZStatus {
 	OK = 0,
@@ -43,3 +45,7 @@ export interface ZBuffer {
 
 	inflate_flush(z: ZStream, r: ZStatus): ZStatus;
 }
+
+export const swap32 = (q: number) =>
+	(((q >>> 24) & 0xff) | ((q >>> 8) & 0xff00) |
+	((q & 0xff00) << 8) | ((q & 0xff) << 24)) >>> 0;

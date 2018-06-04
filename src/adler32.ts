@@ -6,10 +6,10 @@
  * https://github.com/madler/zlib/blob/v1.2.11/adler32.c
  */
 
+import { TypedArray } from "./common";
+
 const BASE = 65521;     /* largest prime smaller than 65536 */
 const NMAX = 5552;
-
-type TypedArray = Uint8Array | Uint8ClampedArray | Int8Array | Uint16Array | Int16Array | Uint32Array | Int32Array | Float32Array | Float64Array;
 
 /**
  * Compute the Adler-32 checksum of a source.
