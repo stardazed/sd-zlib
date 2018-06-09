@@ -41,12 +41,9 @@ export class Inflate {
 
 	private blocks: InfBlocks; // current inflate_blocks state
 
-	constructor(parseHeader: boolean, windowSizeBits: number = ZLimits.MAX_BITS) {
-		if (windowSizeBits < ZLimits.MIN_BITS || windowSizeBits > ZLimits.MAX_BITS) {
-			throw new Error("Invalid window size");
-		}
-		this.wbits = windowSizeBits;
-		this.blocks = new InfBlocks(1 << windowSizeBits);
+	constructor(parseHeader: boolean) {
+		this.wbits = ZLimits.MAX_BITS;
+		this.blocks = new InfBlocks(1 << this.wbits);
 		this.mode = parseHeader ? Mode.METHOD : Mode.BLOCKS;
 	}
 

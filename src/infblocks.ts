@@ -36,7 +36,6 @@ export class InfBlocks implements ZBuffer {
 	readonly hufts = new Int32Array(ZLimits.MANY * 3); // single malloc for tree space
 
 	mode: Mode = Mode.TYPE;
-
 	bitk = 0; // bits in bit buffer
 	bitb = 0; // bit buffer
 	read = 0; // window read pointer
@@ -149,7 +148,6 @@ export class InfBlocks implements ZBuffer {
 		// }
 
 		// process input based on current state
-		// DEBUG dtree
 		while (true) {
 			switch (this.mode) {
 			case Mode.TYPE:
