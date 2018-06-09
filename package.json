@@ -19,5 +19,9 @@
 	},
 	"dependencies": {
 		"@stardazed/adler32": "^0.1.0"
-	}
+	},
+	"files": [
+		"dist/indes.esm.js",
+		"dist/index.d.ts"
+	]
 }
