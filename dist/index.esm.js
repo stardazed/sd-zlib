@@ -1,11 +1,12 @@
 // ZStream
 // Part of sd-inflate -- see index for copyright and info
 // tslint:disable:variable-name
+const OUTPUT_BUFSIZE = 16384;
 class ZStream {
     constructor() {
         this.avail_in = 0;
         this.next_in_index = 0;
-        this.next_out = new Uint8Array(16384 /* OUTPUT_BUFSIZE */);
+        this.next_out = new Uint8Array(OUTPUT_BUFSIZE);
         this.avail_out = this.next_out.byteLength;
         this.next_out_index = 0;
         this.total_in = this.total_out = 0;
@@ -1049,7 +1050,6 @@ class InfBlocks {
         m = /* (int) */ (q < this.read ? this.read - q - 1 : this.end - q);
         // }
         // process input based on current state
-        // DEBUG dtree
         while (true) {
             switch (this.mode) {
                 case 0 /* TYPE */:
@@ -1605,7 +1605,7 @@ const PRESET_DICT = 0x20;
 const Z_DEFLATED = 8;
 const mark = [0, 0, 0xff, 0xff];
 class Inflate {
-    constructor(windowSizeBits = 15 /* MAX_BITS */) {
+    constructor(parseHeader) {
         // mode dependent information
         this.method = 0; // if FLAGS, method byte
         this.dictChecksum = 0; // expected checksum of external dictionary
@@ -1613,12 +1613,14 @@ class Inflate {
         this.marker = 0;
         // mode independent information
         this.wbits = 0; // log2(window size) (8..15, defaults to 15)
-        if (windowSizeBits < 8 /* MIN_BITS */ || windowSizeBits > 15 /* MAX_BITS */) {
-            throw new Error("Invalid window size");
-        }
-        this.wbits = windowSizeBits;
-        this.blocks = new InfBlocks(1 << windowSizeBits);
-        this.mode = 0 /* METHOD */;
+        this.wbits = 15 /* MAX_BITS */;
+        this.blocks = new InfBlocks(1 << this.wbits);
+        this.mode = parseHeader ? 0 /* METHOD */ : 7 /* BLOCKS */;
+    }
+    get isComplete() {
+        const { blocks } = this;
+        const blocksComplete = (blocks.mode === 0 || blocks.mode === 8) && blocks.bitb === 0 && blocks.bitk === 0;
+        return (this.mode === 7 /* BLOCKS */ || this.mode === 12 /* DONE */) && blocksComplete;
     }
     inflate(z) {
         let b;
@@ -1752,7 +1754,8 @@ class Inflate {
         // verify dictionary checksum
         const checksum = adler32Bytes(dictionary);
         if (checksum !== this.dictChecksum) {
-            throw new Error("Dictionary checksum mismatch");
+            // wrong checksum, don't use and report error
+            return -3 /* DATA_ERROR */;
         }
         this.blocks.set_dictionary(dictionary, index, length);
         this.mode = 7 /* BLOCKS */;
@@ -1849,21 +1852,32 @@ class Inflate {
  * - Use const enums for enum-likes
  * - Modernize code as much as reasonably possible, removing unused features
  */
-function Inflater() {
-    const inflate = new Inflate();
-    const z = new ZStream();
-    const bufsize = 16384;
-    let nomoreinput = false;
-    const append = function (data) {
-        const buffers = [];
-        let bufferIndex = 0, bufferSize = 0;
+class Inflater {
+    constructor(options) {
+        options = options || {};
+        const parseHeader = options.dataIncludesHeader === undefined ? true : options.dataIncludesHeader;
+        this.allowPartialData = options.allowPartialData === undefined ? false : options.allowPartialData;
+        this.inflate = new Inflate(parseHeader);
+        this.z = new ZStream();
+        this.customDict = options.presetDictionary;
+        this.buffers = [];
+    }
+    /**
+     * Add more data to be decompressed. Call this as many times as
+     * needed as deflated data becomes available.
+     * @param data A Uint8 view of the compressed data.
+     * @throws {Error} Will throw in case of bad data
+     */
+    append(data) {
         if (data.length === 0) {
             return;
         }
+        const { inflate, z, buffers } = this;
+        let nomoreinput = false;
         z.append(data);
         do {
             z.next_out_index = 0;
-            z.avail_out = bufsize;
+            z.avail_out = OUTPUT_BUFSIZE;
             if ((z.avail_in === 0) && (!nomoreinput)) { // if buffer is empty and more input is available, refill it
                 z.next_in_index = 0;
                 nomoreinput = true;
@@ -1874,6 +1888,17 @@ function Inflater() {
                     throw new Error("inflating: bad input");
                 }
             }
+            else if (err === 2 /* NEED_DICT */) {
+                if (this.customDict) {
+                    const dictErr = inflate.inflateSetDictionary(this.customDict);
+                    if (dictErr !== 0 /* OK */) {
+                        throw new Error("Custom dictionary is invalid for this data");
+                    }
+                }
+                else {
+                    throw new Error("Custom dictionary required");
+                }
+            }
             else if (err !== 0 /* OK */ && err !== 1 /* STREAM_END */) {
                 throw new Error("inflating: " + z.msg);
             }
@@ -1881,26 +1906,63 @@ function Inflater() {
                 throw new Error("inflating: bad input");
             }
             if (z.next_out_index) {
-                if (z.next_out_index === bufsize) {
+                if (z.next_out_index === OUTPUT_BUFSIZE) {
                     buffers.push(new Uint8Array(z.next_out));
                 }
                 else {
                     buffers.push(new Uint8Array(z.next_out.subarray(0, z.next_out_index)));
                 }
             }
-            bufferSize += z.next_out_index;
         } while (z.avail_in > 0 || z.avail_out === 0);
-        // concatenate output buffers and return
-        const array = new Uint8Array(bufferSize);
-        buffers.forEach(function (chunk) {
-            array.set(chunk, bufferIndex);
-            bufferIndex += chunk.length;
-        });
-        return array;
-    };
-    return {
-        append
-    };
+    }
+    mergeBuffers(buffers) {
+        const totalSize = buffers.map(b => b.byteLength).reduce((s, l) => s + l, 0);
+        const output = new Uint8Array(totalSize);
+        let offset = 0;
+        for (const buf of buffers) {
+            output.set(buf, offset);
+            offset += buf.length;
+        }
+        return output;
+    }
+    /**
+     * Complete the inflate action and return the resulting
+     * data.
+     * @throws {Error} If the data is incomplete and you did
+     * not set allowPartialData in the constructor.
+     */
+    finish() {
+        if (!this.inflate.isComplete && !this.allowPartialData) {
+            throw new Error("Cannot finish inflating incomplete data.");
+        }
+        return this.mergeBuffers(this.buffers);
+    }
+}
+/**
+ * inflate does the right thing for almost all situations and provides
+ * a simple, Promise-based way to inflate data. It detects any headers
+ * and will act appropriately. Unless you need more control over the
+ * inflate process, it is recommended to use this function.
+ * @param data The deflated data
+ * @param presetDict Optional preset deflate dictionary
+ * @returns A promise to the re-inflated data
+ */
+function inflate(data, presetDict) {
+    return new Promise(resolve => {
+        if (data.length < 2) {
+            throw new Error("Invalid data");
+        }
+        const options = {
+            presetDictionary: presetDict
+        };
+        // check for a deflate header
+        const [method, flag] = data;
+        options.dataIncludesHeader = (method === 0x78 && (flag === 1 || flag === 0x20));
+        // 
+        const inflater = new Inflater(options);
+        inflater.append(data);
+        resolve(inflater.finish());
+    });
 }
 
-export { Inflater };
+export { Inflater, inflate };
