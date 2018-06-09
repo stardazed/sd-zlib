@@ -46,13 +46,12 @@
 // tslint:disable:variable-name
 
 import { ZStatus } from "./common";
-import { ZStream } from "./zstream";
+import { ZStream, OUTPUT_BUFSIZE } from "./zstream";
 import { Inflate } from "./inflate";
 
 function Inflater() {
 	const inflate = new Inflate();
 	const z = new ZStream();
-	const bufsize = 16384;
 	let nomoreinput = false;
 
 	const append = function(data: Uint8Array) {
@@ -65,7 +64,7 @@ function Inflater() {
 
 		do {
 			z.next_out_index = 0;
-			z.avail_out = bufsize;
+			z.avail_out = OUTPUT_BUFSIZE;
 
 			if ((z.avail_in === 0) && (!nomoreinput)) { // if buffer is empty and more input is available, refill it
 				z.next_in_index = 0;
@@ -84,7 +83,7 @@ function Inflater() {
 				throw new Error("inflating: bad input");
 			}
 			if (z.next_out_index) {
-				if (z.next_out_index === bufsize) {
+				if (z.next_out_index === OUTPUT_BUFSIZE) {
 					buffers.push(new Uint8Array(z.next_out));
 				}
 				else {
