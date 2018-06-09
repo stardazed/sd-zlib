@@ -205,7 +205,8 @@ export class Inflate {
 		// verify dictionary checksum
 		const checksum = adler32Bytes(dictionary);
 		if (checksum !== this.dictChecksum) {
-			throw new Error("Dictionary checksum mismatch");
+			// wrong checksum, don't use and report error
+			return ZStatus.DATA_ERROR;
 		}
 
 		this.blocks.set_dictionary(dictionary, index, length);
