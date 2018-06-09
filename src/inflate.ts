@@ -50,6 +50,12 @@ export class Inflate {
 		this.mode = parseHeader ? Mode.METHOD : Mode.BLOCKS;
 	}
 
+	get isComplete() {
+		const { blocks } = this;
+		const blocksComplete = blocks.mode === 0 && blocks.bitb === 0 && blocks.bitk === 0;
+		return (this.mode === Mode.BLOCKS || this.mode === Mode.DONE) && blocksComplete;
+	}
+
 	inflate(z: ZStream) {
 		let b: number;
 
