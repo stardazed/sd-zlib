@@ -3,10 +3,10 @@
 <head>
 	<meta charset="utf-8">
 	<title>sd-inflate tests</title>
-	<script src="inflate-orig.js"></script>
 </head>
 <body>
 <script type="module">
+// @ts-check
 /**
  * Just a quick manual testing page to check deflate results.
  *  
@@ -19,60 +19,83 @@
  * 0x7801, data(BLOCKS), checksum(Adler32)
  */ 
 
-import { Inflater as SDInflater } from "../dist/index.esm.js";
+import { Inflater, inflate } from "../dist/index.esm.js";
 
-function testDeflateText(fileName, inflater, inflaterName) {
-	return Promise.all([fetch(`./${fileName}.deflate`), fetch(`./${fileName}.txt`)])
-		.then(([rD, rT]) => Promise.all([rD.arrayBuffer(), rT.text()]))
-		.then(([ab, text]) => {
-			// decompress data
-			const dataDeflated = new Uint8Array(ab, 0, ab.byteLength - 4);
-			const result = inflater.append(dataDeflated);
+function testDeflateParts(fileName) {
+	return Promise.all([fetch(`./${fileName}.part1.deflate`), fetch(`./${fileName}.part2.deflate`), fetch(`./${fileName}.txt`)])
+		.then(([rD, rD2, rT]) => Promise.all([rD.arrayBuffer(), rD2.arrayBuffer(), rT.text()]))
+		.then(([ab, ab2, text]) => {
+			const inflater = new Inflater();
+			// pass in two buffers
+			const dataDeflated1 = new Uint8Array(ab, 0, ab.byteLength);
+			inflater.append(dataDeflated1);
+			const dataDeflated2 = new Uint8Array(ab2, 0, ab2.byteLength); // no checksum was added to the parts file
+			inflater.append(dataDeflated2);
+
+			const result = inflater.finish();
 
 			// check decompressed data against original
 			const contents = (new TextDecoder()).decode(result);
 
 			// report success
 			const success = contents === text;
-			console.info("TEST (text) done", inflaterName, fileName, success);
+			console.info("TEST (multi-part) done", fileName, success);
 			return success;
 		})
 		.catch(err => {
-			console.warn("Error during test (text)", inflaterName, fileName, err);
+			console.warn("Error during test (multi-part)", fileName, err);
+			return false;
+		});
+}
+
+function testDeflateText(fileName) {
+	return Promise.all([fetch(`./${fileName}.deflate`), fetch(`./${fileName}.txt`)])
+		.then(([rD, rT]) => Promise.all([rD.arrayBuffer(), rT.text()]))
+		.then(async ([ab, text]) => {
+			// decompress data
+			const result = await inflate(new Uint8Array(ab, 0, ab.byteLength - 4));
+
+			// check decompressed data against original
+			const contents = (new TextDecoder()).decode(result);
+
+			// report success
+			const success = contents === text;
+			console.info("TEST (text) done", fileName, success);
+			return success;
+		})
+		.catch(err => {
+			console.warn("Error during test (text)", fileName, err);
 			return false;
 		});
 }
 
 
-function testDeflateBinary(fileName, inflater, inflaterName) {
+function testDeflateBinary(fileName) {
 	return fetch(`./${fileName}.deflate`)
 		.then(rD => rD.arrayBuffer())
 		.then(ab => {
 			// decompress data
+			const inflater = new Inflater();
 			const dataDeflated = new Uint8Array(ab, 0, ab.byteLength - 4);
 			const result = inflater.append(dataDeflated);
 			
 			// report success
 			const success = true;
-			console.info("TEST (binary) done", inflaterName, fileName, success);
+			console.info("TEST (binary) done", fileName, success);
 			return success;
 		})
 		.catch(err => {
-			console.warn("Error during test (binary)", inflaterName, fileName, err);
+			console.warn("Error during test (binary)", fileName, err);
 			return false;
 		});
 }
 
 function runTests() {
 	Promise.all([
-		testDeflateText("simple", new Inflater(), "ORIGINAL"),
-		testDeflateText("simple", SDInflater(), "STARDAZED"),
-
-		testDeflateText("paradiselost", new Inflater(), "ORIGINAL"),
-		testDeflateText("paradiselost", SDInflater(), "STARDAZED"),
-
-		testDeflateBinary("vertices", new Inflater(), "ORIGINAL"),
-		testDeflateBinary("vertices", SDInflater(), "STARDAZED")
+		testDeflateText("simple"),
+		testDeflateText("paradiselost"),
+		testDeflateParts("paradiselost"),
+		testDeflateBinary("vertices")
 	])
 	.then(results => {
 		console.info("DONE");
