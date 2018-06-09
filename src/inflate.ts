@@ -41,13 +41,13 @@ export class Inflate {
 
 	private blocks: InfBlocks; // current inflate_blocks state
 
-	constructor(windowSizeBits: number = ZLimits.MAX_BITS) {
+	constructor(parseHeader: boolean, windowSizeBits: number = ZLimits.MAX_BITS) {
 		if (windowSizeBits < ZLimits.MIN_BITS || windowSizeBits > ZLimits.MAX_BITS) {
 			throw new Error("Invalid window size");
 		}
 		this.wbits = windowSizeBits;
 		this.blocks = new InfBlocks(1 << windowSizeBits);
-		this.mode = Mode.METHOD;
+		this.mode = parseHeader ? Mode.METHOD : Mode.BLOCKS;
 	}
 
 	inflate(z: ZStream) {
