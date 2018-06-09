@@ -21,16 +21,16 @@
 
 import { Inflater, inflate } from "../dist/index.esm.js";
 
-function testDeflateParts(fileName) {
+function testInflateParts(fileName) {
 	return Promise.all([fetch(`./${fileName}.part1.deflate`), fetch(`./${fileName}.part2.deflate`), fetch(`./${fileName}.txt`)])
 		.then(([rD, rD2, rT]) => Promise.all([rD.arrayBuffer(), rD2.arrayBuffer(), rT.text()]))
 		.then(([ab, ab2, text]) => {
 			const inflater = new Inflater();
 			// pass in two buffers
-			const dataDeflated1 = new Uint8Array(ab, 0, ab.byteLength);
-			inflater.append(dataDeflated1);
-			const dataDeflated2 = new Uint8Array(ab2, 0, ab2.byteLength); // no checksum was added to the parts file
-			inflater.append(dataDeflated2);
+			const dataInflated1 = new Uint8Array(ab, 0, ab.byteLength);
+			inflater.append(dataInflated1);
+			const dataInflated2 = new Uint8Array(ab2, 0, ab2.byteLength); // no checksum was added to the parts file
+			inflater.append(dataInflated2);
 
 			const result = inflater.finish();
 
@@ -48,7 +48,7 @@ function testDeflateParts(fileName) {
 		});
 }
 
-function testDeflateText(fileName) {
+function testInflateText(fileName) {
 	return Promise.all([fetch(`./${fileName}.deflate`), fetch(`./${fileName}.txt`)])
 		.then(([rD, rT]) => Promise.all([rD.arrayBuffer(), rT.text()]))
 		.then(async ([ab, text]) => {
@@ -70,14 +70,14 @@ function testDeflateText(fileName) {
 }
 
 
-function testDeflateBinary(fileName) {
+function testInflateBinary(fileName) {
 	return fetch(`./${fileName}.deflate`)
 		.then(rD => rD.arrayBuffer())
 		.then(ab => {
 			// decompress data
 			const inflater = new Inflater();
-			const dataDeflated = new Uint8Array(ab, 0, ab.byteLength - 4);
-			const result = inflater.append(dataDeflated);
+			const dataInflated = new Uint8Array(ab, 0, ab.byteLength - 4);
+			const result = inflater.append(dataInflated);
 			
 			// report success
 			const success = true;
@@ -92,10 +92,10 @@ function testDeflateBinary(fileName) {
 
 function runTests() {
 	Promise.all([
-		testDeflateText("simple"),
-		testDeflateText("paradiselost"),
-		testDeflateParts("paradiselost"),
-		testDeflateBinary("vertices")
+		testInflateText("simple"),
+		testInflateText("paradiselost"),
+		testInflateParts("paradiselost"),
+		testInflateBinary("vertices")
 	])
 	.then(results => {
 		console.info("DONE");
