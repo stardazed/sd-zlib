@@ -43,23 +43,68 @@
  * - Modernize code as much as reasonably possible, removing unused features
  */
 
-// tslint:disable:variable-name
-
 import { ZStatus } from "./common";
 import { ZStream, OUTPUT_BUFSIZE } from "./zstream";
 import { Inflate } from "./inflate";
 
-function Inflater() {
-	const inflate = new Inflate();
-	const z = new ZStream();
-	let nomoreinput = false;
+export interface InflaterOptions {
+	/**
+	 * If set, the DEFLATE header and optional preset dictionary
+	 * checksum will be parsed and verified.
+	 * Set to false if you only have the compressed data, e.g.
+	 * of a gzip file.
+	 * @default true
+	 */
+	dataIncludesHeader: boolean;
 
-	const append = function(data: Uint8Array) {
-		const buffers = [];
-		let bufferIndex = 0, bufferSize = 0;
+	/**
+	 * If set to true, then you can call {{finish}} mid-stream.
+	 * This is only useful if you know you have incomplete data.
+	 * @default false
+	 */
+	allowPartialData: boolean;
+
+	/**
+	 * Provide an optional precalculated lookup dictionary.
+	 * Only used if the data indicates it needs an external dictionary.
+	 * If used, the Adler32 checksum of the dictionary is verified
+	 * against the checksum stored in the deflated data.
+	 * If {{dataIncludesHeader}} is false, then this is ignored.
+	 * @default undefined
+	 */
+	presetDictionary: Uint8Array | Uint8ClampedArray;
+}
+
+export class Inflater {
+	private inflate: Inflate;
+	private z: ZStream;
+	private customDict: Uint8Array | Uint8ClampedArray | undefined;
+	private allowPartialData: boolean;
+	private buffers: Uint8Array[];
+
+	constructor(options?: Partial<InflaterOptions>) {
+		options = options || {};
+		const parseHeader = options.dataIncludesHeader === undefined ? true : options.dataIncludesHeader;
+		this.allowPartialData = options.allowPartialData === undefined ? false : options.allowPartialData;
+
+		this.inflate = new Inflate(parseHeader);
+		this.z = new ZStream();
+		this.customDict = options.presetDictionary;
+		this.buffers = [];
+	}
+
+	/**
+	 * Add more data to be decompressed. Call this as many times as
+	 * needed as deflated data becomes available.
+	 * @param data A Uint8 view of the compressed data.
+	 * @throws {Error} Will throw in case of bad data
+	 */
+	append(data: Uint8Array | Uint8ClampedArray) {
 		if (data.length === 0) {
 			return;
 		}
+		const { inflate, z, buffers } = this;
+		let nomoreinput = false;
 		z.append(data);
 
 		do {
@@ -76,7 +121,19 @@ function Inflater() {
 				if (z.avail_in !== 0) {
 					throw new Error("inflating: bad input");
 				}
-			} else if (err !== ZStatus.OK && err !== ZStatus.STREAM_END) {
+			}
+			else if (err === ZStatus.NEED_DICT) {
+				if (this.customDict) {
+					const dictErr = inflate.inflateSetDictionary(this.customDict);
+					if (dictErr !== ZStatus.OK) {
+						throw new Error("Custom dictionary is invalid for this data");
+					}
+				}
+				else {
+					throw new Error("Custom dictionary required");
+				}
+			}
+			else if (err !== ZStatus.OK && err !== ZStatus.STREAM_END) {
 				throw new Error("inflating: " + z.msg);
 			}
 			if ((nomoreinput || err === ZStatus.STREAM_END) && (z.avail_in === data.length)) {
@@ -90,21 +147,33 @@ function Inflater() {
 					buffers.push(new Uint8Array(z.next_out.subarray(0, z.next_out_index)));
 				}
 			}
-			bufferSize += z.next_out_index;
 		} while (z.avail_in > 0 || z.avail_out === 0);
+	}
 
-		// concatenate output buffers and return
-		const array = new Uint8Array(bufferSize);
-		buffers.forEach(function(chunk) {
-			array.set(chunk, bufferIndex);
-			bufferIndex += chunk.length;
-		});
-		return array;
-	};
+	private mergeBuffers(buffers: Uint8Array[]) {
+		const totalSize = buffers.map(b => b.byteLength).reduce((s, l) => s + l, 0);
+		const output = new Uint8Array(totalSize);
 
-	return {
-		append
-	};
+		let offset = 0;
+		for (const buf of buffers) {
+			output.set(buf, offset);
+			offset += buf.length;
+		}
+		return output;
+	}
+
+	/**
+	 * Complete the inflate action and return the resulting
+	 * data.
+	 * @throws {Error} If the data is incomplete and you did
+	 * not set allowPartialData in the constructor.
+	 */
+	finish() {
+		if (! this.inflate.isComplete && ! this.allowPartialData) {
+			throw new Error("Cannot finish inflating incomplete data.");
+		}
+
+		return this.mergeBuffers(this.buffers);
+	}
 }
 
-export { Inflater };
