@@ -5,7 +5,7 @@
 export const OUTPUT_BUFSIZE = 16384;
 
 export class ZStream {
-	next_in!: Uint8Array;
+	next_in!: Uint8Array | Uint8ClampedArray;
 	avail_in: number;
 	next_in_index: number;
 
@@ -31,7 +31,7 @@ export class ZStream {
 		this.msg = "";
 	}
 
-	append(data: Uint8Array) {
+	append(data: Uint8Array | Uint8ClampedArray) {
 		this.next_in = data;
 		this.avail_in = data.length;
 		this.next_in_index = 0;
