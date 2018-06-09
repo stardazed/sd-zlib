@@ -177,3 +177,32 @@ export class Inflater {
 	}
 }
 
+/**
+ * inflate does the right thing for almost all situations and provides
+ * a simple, Promise-based way to inflate data. It detects any headers
+ * and will act appropriately. Unless you need more control over the
+ * inflate process, it is recommended to use this function.
+ * @param data The deflated data
+ * @param presetDict Optional preset deflate dictionary
+ * @returns A promise to the re-inflated data
+ */
+export function inflate(data: Uint8Array | Uint8ClampedArray, presetDict?: Uint8Array | Uint8ClampedArray) {
+	return new Promise<Uint8Array>(resolve => {
+		if (data.length < 2) {
+			throw new Error("Invalid data");
+		}
+
+		const options: Partial<InflaterOptions> = {
+			presetDictionary: presetDict
+		};
+
+		// check for a deflate header
+		const [method, flag] = data;
+		options.dataIncludesHeader = (method === 0x78 && (flag === 1 || flag === 0x20));
+
+		// 
+		const inflater = new Inflater(options);
+		inflater.append(data);
+		resolve(inflater.finish());
+	});
+}

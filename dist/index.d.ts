@@ -55,3 +55,13 @@ export class Inflater {
 	finish(): Uint8Array;
 }
 
+/**
+ * inflate does the right thing for almost all situations and provides
+ * a simple, Promise-based way to inflate data. It detects any headers
+ * and will act appropriately. Unless you need more control over the
+ * inflate process, it is recommended to use this function.
+ * @param data The deflated data
+ * @param presetDict Optional preset deflate dictionary
+ * @returns A promise to the re-inflated data
+ */
+export function inflate(data: Uint8Array | Uint8ClampedArray, presetDict?: Uint8Array | Uint8ClampedArray): Promise<Uint8Array>;
