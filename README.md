@@ -1,84 +1,78 @@
-sd-inflate
-==========
-Decompress data compressed with zlib.
+@stardazed/inflate
+==================
+Zip inflate algorithm implementation.
+Decompresses data compressed with zlib.
 Supports optional DEFLATE headers and preset dictionaries.
 
 Installation
 ------------
-**⚠️ Important**: This package, like everything in the @stardazed org,
-is distributed as an ES2015 module and is intended for use in browsers,
-not in NodeJS per se. Browser-specific types may be used.
-
-`yarn add @stardazed/inflate`
-
-or
-
-`npm install --save @stardazed/inflate`
-
-Usage (normal)
---------------
-```ts
-/**
- * inflate does the right thing for almost all situations and provides
- * a simple, Promise-based way to inflate data. It detects any headers
- * and will act appropriately. Unless you need more control over the
- * inflate process, it is recommended to use this function.
- * @param data The deflated data
- * @param presetDict Optional preset deflate dictionary
- * @returns A promise to the re-inflated data
- */
-function inflate(data: Uint8Array | Uint8ClampedArray, presetDict?: Uint8Array | Uint8ClampedArray): Promise<Uint8Array>;
+```
+npm install @stardazed/inflate
+pnpm install @stardazed/inflate
+yarn add @stardazed/inflate
 ```
 
-Usage (advanced)
-----------------
-```ts
-interface InflaterOptions {
-	/**
-	 * If set, the DEFLATE header and optional preset dictionary
-	 * checksum will be parsed and verified.
-	 * Set to false if you only have the compressed data, e.g.
-	 * of a gzip file.
-	 * @default true
-	 */
-	dataIncludesHeader: boolean;
+Usage
+-----
+In most cases, just call `inflate` on deflated data and you're done. This call
+will correctly interpret and handle a DEFLATE header if it is present.
 
-	/**
-	 * If set to true, then you can call {{finish}} mid-stream.
-	 * This is only useful if you know you have incomplete data.
-	 * @default false
-	 */
-	allowPartialData: boolean;
+⚠️ **Important**: Gzip headers are not currently supported, you must provide
+the buffer without any gzip headers.
 
-	/**
-	 * Provide an optional precalculated lookup dictionary.
-	 * Only used if the data indicates it needs an external dictionary.
-	 * If used, the Adler32 checksum of the dictionary is verified
-	 * against the checksum stored in the deflated data.
-	 * If {{dataIncludesHeader}} is false, then this is ignored.
-	 * @default undefined
-	 */
-	presetDictionary: Uint8Array | Uint8ClampedArray;
+```js
+import { inflate } from "@stardazed/inflate";
+
+const deflatedData = /* must be a Uint8Array */;
+inflate(deflatedData).then(
+	data => /* act on inflated buffer */,
+	error => /* the data was incomplete or invalid */
+);
+```
+
+If you want more control over the process, including streaming in data chunks
+as you receive them, then use the `Inflater` class.
+
+The `Inflater` class takes the following options:
+
+`dataIncludesHeader`: boolean (default `true`)<br>
+If set, the DEFLATE header and optional preset dictionary checksum will be
+parsed and verified. Set to `false` if you only have the compressed data,
+e.g. of a gzip file.
+
+`allowPartialData`: boolean (default: `false`)<br>
+If set to true, then you can call `finish` mid-stream. This is only useful
+if you know you have incomplete data.
+
+`presetDictionary`: Uint8Array (default: `undefined`)<br>
+Provide an optional precalculated lookup dictionary. Only used if the data
+indicates it needs an external dictionary in the DEFLATE header.
+If used, the Adler32 checksum of the dictionary is verified against the
+checksum stored in the deflated data. If `dataIncludesHeader` is `false`,
+then this is ignored.
+
+
+```js
+import { Inflater } from "@stardazed/inflate";
+
+const inflater = new Inflater(options /* see above */);
+
+// then, each time a new chunk of data becomes available:
+try {
+    inflater.append(chunk); // chunk must be an Uint8Array
+}
+catch (error) {
+    // handle errors (could be bad data, invalid header, etc.)
 }
 
-class Inflater {
-	constructor(options?: Partial<InflaterOptions>);
-
-	/**
-	 * Add more data to be decompressed. Call this as many times as
-	 * needed as deflated data becomes available.
-	 * @param data A Uint8 view of the compressed data.
-	 * @throws {Error} Will throw in case of bad data
-	 */
-	append(data: Uint8Array | Uint8ClampedArray): void;
-
-	/**
-	 * Complete the inflate action and return the resulting
-	 * data.
-	 * @throws {Error} If the data is incomplete and you did
-	 * not set allowPartialData in the constructor.
-	 */
-	finish(): Uint8Array;
+// when all data has been appended:
+try {
+	const data = inflater.finish();
+	// ...act on data
+}
+catch (error) {
+	// an error will be thrown if the deflated data was incomplete
+	// and you did not specify allowPartialData in the options
 }
 ```
 
