@@ -1,4 +1,9 @@
 /**
+ * @stardazed/inflate - zip inflate algorithm implementation
+ * Part of Stardazed
+ * (c) 2018 by Arthur Langereis - @zenmumbler
+ * https://github.com/stardazed/sd-inflate
+ *
  * Copyright (c) 2013 Gildas Lormeau. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,12 +36,12 @@
  * Jean-loup Gailly(jloup@gzip.org) and Mark Adler(madler@alumni.caltech.edu)
  * and contributors of zlib.
  *
- *
- * Modifications by Arthur Langereis (@zenmumbler):
+ * * Modifications by Arthur Langereis (@zenmumbler):
  * - Increased output buffer size from 512 bytes to 16384 bytes
  * - Replace ZStream.read_byte calls with direct z.next_in[] accesses
  * - Removed onprogress callback
  * - Removed usages of .subarray and .set in the inner loops, increasing performance by ~3x
+ * - Fix and complete support for preset dictionaries
  * - Converted to TypeScript
  * - Modularized
  * - Use const enums for enum-likes
@@ -55,14 +60,14 @@ export interface InflaterOptions {
 	 * of a gzip file.
 	 * @default true
 	 */
-	dataIncludesHeader: boolean;
+	dataIncludesHeader?: boolean;
 
 	/**
 	 * If set to true, then you can call {{finish}} mid-stream.
 	 * This is only useful if you know you have incomplete data.
 	 * @default false
 	 */
-	allowPartialData: boolean;
+	allowPartialData?: boolean;
 
 	/**
 	 * Provide an optional precalculated lookup dictionary.
@@ -72,20 +77,24 @@ export interface InflaterOptions {
 	 * If {{dataIncludesHeader}} is false, then this is ignored.
 	 * @default undefined
 	 */
-	presetDictionary: Uint8Array | Uint8ClampedArray;
+	presetDictionary?: Uint8Array;
 }
 
 export class Inflater {
 	private inflate: Inflate;
 	private z: ZStream;
-	private customDict: Uint8Array | Uint8ClampedArray | undefined;
+	private customDict: Uint8Array | undefined;
 	private allowPartialData: boolean;
 	private buffers: Uint8Array[];
 
-	constructor(options?: Partial<InflaterOptions>) {
+	constructor(options?: InflaterOptions) {
 		options = options || {};
-		const parseHeader = options.dataIncludesHeader === undefined ? true : options.dataIncludesHeader;
-		this.allowPartialData = options.allowPartialData === undefined ? false : options.allowPartialData;
+		const parseHeader = options.dataIncludesHeader === undefined ? true : !!options.dataIncludesHeader;
+		this.allowPartialData = options.allowPartialData === undefined ? false : !!options.allowPartialData;
+
+		if (options.presetDictionary !== undefined && !(options.presetDictionary instanceof Uint8Array)) {
+			throw new TypeError("options.presetDictionary must be undefined or a Uint8Array");
+		}
 
 		this.inflate = new Inflate(parseHeader);
 		this.z = new ZStream();
@@ -96,16 +105,19 @@ export class Inflater {
 	/**
 	 * Add more data to be decompressed. Call this as many times as
 	 * needed as deflated data becomes available.
-	 * @param data A Uint8 view of the compressed data.
-	 * @throws {Error} Will throw in case of bad data
+	 * @param chunk a Uint8Array containing compressed data
 	 */
-	append(data: Uint8Array | Uint8ClampedArray) {
-		if (data.length === 0) {
+	append(chunk: Uint8Array) {
+		if (! (chunk instanceof Uint8Array)) {
+			throw new TypeError("data must be a Uint8Array");
+		}
+		if (chunk.length === 0) {
 			return;
 		}
+
 		const { inflate, z, buffers } = this;
 		let nomoreinput = false;
-		z.append(data);
+		z.append(chunk);
 
 		do {
 			z.next_out_index = 0;
@@ -136,7 +148,7 @@ export class Inflater {
 			else if (err !== ZStatus.OK && err !== ZStatus.STREAM_END) {
 				throw new Error("inflating: " + z.msg);
 			}
-			if ((nomoreinput || err === ZStatus.STREAM_END) && (z.avail_in === data.length)) {
+			if ((nomoreinput || err === ZStatus.STREAM_END) && (z.avail_in === chunk.length)) {
 				throw new Error("inflating: bad input");
 			}
 			if (z.next_out_index) {
@@ -182,17 +194,20 @@ export class Inflater {
  * a simple, Promise-based way to inflate data. It detects any headers
  * and will act appropriately. Unless you need more control over the
  * inflate process, it is recommended to use this function.
- * @param data The deflated data
- * @param presetDict Optional preset deflate dictionary
- * @returns A promise to the re-inflated data
+ * @param data the deflated data
+ * @param presetDict optional preset deflate dictionary
+ * @returns a promise to the re-inflated data
  */
-export function inflate(data: Uint8Array | Uint8ClampedArray, presetDict?: Uint8Array | Uint8ClampedArray) {
+export function inflate(data: Uint8Array, presetDict?: Uint8Array) {
 	return new Promise<Uint8Array>(resolve => {
+		if (! (data instanceof Uint8Array)) {
+			throw new TypeError("data must be a Uint8Array");
+		}
 		if (data.length < 2) {
-			throw new Error("Invalid data");
+			throw new TypeError("data buffer is invalid");
 		}
 
-		const options: Partial<InflaterOptions> = {
+		const options: InflaterOptions = {
 			presetDictionary: presetDict
 		};
 
@@ -200,7 +215,7 @@ export function inflate(data: Uint8Array | Uint8ClampedArray, presetDict?: Uint8
 		const [method, flag] = data;
 		options.dataIncludesHeader = (method === 0x78 && (flag === 1 || flag === 0x20));
 
-		// 
+		// single chunk inflate
 		const inflater = new Inflater(options);
 		inflater.append(data);
 		resolve(inflater.finish());

@@ -193,7 +193,7 @@ export class Inflate {
 		}
 	}
 
-	inflateSetDictionary(dictionary: Uint8Array | Uint8ClampedArray) {
+	inflateSetDictionary(dictionary: Uint8Array) {
 		if (this.mode !== Mode.DICT0) {
 			return ZStatus.STREAM_ERROR;
 		}
