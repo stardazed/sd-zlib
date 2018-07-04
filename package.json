@@ -12,10 +12,15 @@
 	"module": "dist/sd-inflate.esm.js",
 	"types": "dist/sd-inflate.d.ts",
 	"main": "dist/sd-inflate.esm.js",
+	"scripts": {
+		"build": "rollup -c",
+		"prepublishOnly": "rollup -c"
+	},
 	"devDependencies": {
 		"rollup": "0.60.7",
 		"rollup-plugin-node-resolve": "^3.3.0",
 		"rollup-plugin-typescript2": "^0.15.1",
+		"tslib": "^1.9.3",
 		"typescript": "^2.9.2"
 	},
 	"dependencies": {

@@ -6,7 +6,7 @@
 
 		"declaration": false,
 		"sourceMap": false,
-		"removeComments": false,
+		"removeComments": true,
 		"noEmitOnError": true,
 
 		"strict": true,

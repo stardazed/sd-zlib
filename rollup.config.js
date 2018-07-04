@@ -28,7 +28,10 @@ export default [
 				file: "dist/sd-inflate.umd.js",
 				format: "umd",
 				sourcemap: false,
-				intro: banner
+				intro: banner,
+				globals: {
+					"@stardazed/adler32": "sdAdler32"
+				}
 			}
 		],
 		plugins: [
@@ -38,6 +41,9 @@ export default [
 				cacheRoot: "./build",
 				include: ["src/**/*.ts"],
 			}),
-		]
+		],
+		external(id) {
+			return id.includes("@stardazed/");
+		}
 	}
 ];

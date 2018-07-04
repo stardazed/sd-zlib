@@ -4,6 +4,7 @@ devDependencies:
   rollup: 0.60.7
   rollup-plugin-node-resolve: 3.3.0
   rollup-plugin-typescript2: 0.15.1
+  tslib: 1.9.3
   typescript: 2.9.2
 packages:
   /@stardazed/adler32/1.0.0:
@@ -384,6 +385,10 @@ packages:
     dev: true
     resolution:
       integrity: sha512-AVP5Xol3WivEr7hnssHDsaM+lVrVXWUvd1cfXTRkTj80b//6g2wIFEH6hZG0muGZRnHGrfttpdzRk3YlBkWjKw==
+  /tslib/1.9.3:
+    dev: true
+    resolution:
+      integrity: sha512-4krF8scpejhaOgqzBEcGM7yDIEfi0/8+8zDRZhNZZ2kjmHJ4hv3zCbQWxoJGz1iw5U0Jl0nma13xzHXcncMavQ==
   /typescript/2.9.2:
     dev: true
     engines:
@@ -405,4 +410,5 @@ specifiers:
   rollup: 0.60.7
   rollup-plugin-node-resolve: ^3.3.0
   rollup-plugin-typescript2: ^0.15.1
+  tslib: ^1.9.3
   typescript: ^2.9.2
