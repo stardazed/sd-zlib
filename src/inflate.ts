@@ -11,7 +11,7 @@
 import { ZLimits, ZStatus } from "./common";
 import { ZStream } from "./zstream";
 import { InfBlocks } from "./infblocks";
-import { adler32Bytes } from "@stardazed/adler32";
+import { adler32 } from "@stardazed/adler32";
 
 // preset dictionary flag in zlib header
 const PRESET_DICT = 0x20;
@@ -207,7 +207,7 @@ export class Inflate {
 		}
 
 		// verify dictionary checksum
-		const checksum = adler32Bytes(dictionary);
+		const checksum = adler32(dictionary);
 		if (checksum !== this.dictChecksum) {
 			// wrong checksum, don't use and report error
 			return ZStatus.DATA_ERROR;
