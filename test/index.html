@@ -22,6 +22,8 @@
  */ 
 
 // @ts-ignore
+const { adler32 } = sdAdler32;
+// @ts-ignore
 const { Inflater, inflate } = sdInflate;
 
 function testInflateParts(fileName) {
@@ -30,10 +32,10 @@ function testInflateParts(fileName) {
 		.then(([ab, ab2, text]) => {
 			const inflater = new Inflater();
 			// pass in two buffers
-			const dataInflated1 = new Uint8Array(ab, 0, ab.byteLength);
-			inflater.append(dataInflated1);
-			const dataInflated2 = new Uint8Array(ab2, 0, ab2.byteLength); // no checksum was added to the parts file
-			inflater.append(dataInflated2);
+			const dataDeflated1 = new Uint8Array(ab, 0, ab.byteLength);
+			inflater.append(dataDeflated1);
+			const dataDeflated2 = new Uint8Array(ab2, 0, ab2.byteLength); // no checksum was added to the parts file
+			inflater.append(dataDeflated2);
 
 			const result = inflater.finish();
 
@@ -78,12 +80,18 @@ function testInflateBinary(fileName) {
 		.then(rD => rD.arrayBuffer())
 		.then(ab => {
 			// decompress data
-			const inflater = new Inflater();
-			const dataInflated = new Uint8Array(ab, 0, ab.byteLength - 4);
-			const result = inflater.append(dataInflated);
+			const inflater = new Inflater({ allowPartialData: true });
+			const dataDeflated = new Uint8Array(ab, 0, ab.byteLength - 4);
+			inflater.append(dataDeflated);
+			const result = inflater.finish();
+
+			const checkSumStored = new DataView(ab, ab.byteLength - 4, 4).getUint32(0, false);
+			const checkSumVerify = adler32(result);
+
+			console.info(checkSumStored.toString(16), checkSumVerify.toString(16));
 			
 			// report success
-			const success = true;
+			const success = checkSumStored === checkSumVerify;
 			console.info("TEST (binary) done", fileName, success);
 			return success;
 		})
