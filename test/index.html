@@ -3,6 +3,8 @@
 <head>
 	<meta charset="utf-8">
 	<title>sd-inflate tests</title>
+	<script src="../node_modules/@stardazed/adler32/dist/sd-adler32.umd.js"></script>
+	<script src="../dist/sd-inflate.umd.js"></script>
 </head>
 <body>
 <script type="module">
@@ -19,7 +21,8 @@
  * 0x7801, data(BLOCKS), checksum(Adler32)
  */ 
 
-import { Inflater, inflate } from "../dist/index.esm.js";
+// @ts-ignore
+const { Inflater, inflate } = sdInflate;
 
 function testInflateParts(fileName) {
 	return Promise.all([fetch(`./${fileName}.part1.deflate`), fetch(`./${fileName}.part2.deflate`), fetch(`./${fileName}.txt`)])
