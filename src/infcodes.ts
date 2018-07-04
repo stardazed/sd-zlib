@@ -1,3 +1,13 @@
+/**
+ * inflate/infcodes - inner data loop
+ * Part of Stardazed
+ * (c) 2018 by Arthur Langereis - @zenmumbler
+ * https://github.com/stardazed/sd-inflate
+ *
+ * inflate.js (c) 2013 by Gildas Lormeau, part of the zip.js library
+ * Based on zlib (c) 1995-2017 Jean-loup Gailly and Mark Adler
+ */
+
 // InfCodes
 // Part of sd-inflate -- see index for copyright and info
 // tslint:disable:variable-name

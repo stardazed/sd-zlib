@@ -1,5 +1,12 @@
-// InfBlocks
-// Part of sd-inflate -- see index for copyright and info
+/**
+ * inflate/infblocks - block inflate method
+ * Part of Stardazed
+ * (c) 2018 by Arthur Langereis - @zenmumbler
+ * https://github.com/stardazed/sd-inflate
+ *
+ * inflate.js (c) 2013 by Gildas Lormeau, part of the zip.js library
+ * Based on zlib (c) 1995-2017 Jean-loup Gailly and Mark Adler
+ */
 
 import { ZStatus, ZLimits, ZBuffer, inflate_mask, InOut, NumArray } from "./common";
 import { InfCodes } from "./infcodes";
@@ -621,7 +628,7 @@ export class InfBlocks implements ZBuffer {
 		}
 	}
 
-	set_dictionary(d: Uint8Array | Uint8ClampedArray, start: number, n: number) {
+	set_dictionary(d: Uint8Array, start: number, n: number) {
 		this.window.set(d.subarray(start, start + n), 0);
 		this.read = this.write = n;
 	}

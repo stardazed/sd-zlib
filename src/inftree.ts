@@ -1,5 +1,13 @@
-// InfTree
-// Part of sd-inflate -- see index for copyright and info
+/**
+ * inflate/inftree - huffman encoding trees
+ * Part of Stardazed
+ * (c) 2018 by Arthur Langereis - @zenmumbler
+ * https://github.com/stardazed/sd-inflate
+ *
+ * inflate.js (c) 2013 by Gildas Lormeau, part of the zip.js library
+ * Based on zlib (c) 1995-2017 Jean-loup Gailly and Mark Adler
+ */
+
 // tslint:disable:variable-name
 
 import { InOut, ZStatus, ZLimits, NumArray } from "./common";
