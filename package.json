@@ -1,6 +1,6 @@
 {
 	"name": "@stardazed/inflate",
-	"description": "Stardazed - zip inflate algorithm",
+	"description": "Zip inflate algorithm implementation",
 	"version": "0.2.0",
 	"repository": {
 		"type": "git",
@@ -8,20 +8,17 @@
 	},
 	"homepage": "https://github.com/stardazed/sd-inflate",
 	"license": "Zlib",
-	"browser": "dist/index.esm.js",
-	"module": "dist/index.esm.js",
-	"types": "dist/index.d.ts",
+	"browser": "dist/sd-inflate.esm.js",
+	"module": "dist/sd-inflate.esm.js",
+	"types": "dist/sd-inflate.d.ts",
+	"main": "dist/sd-inflate.esm.js",
 	"devDependencies": {
-		"rollup": "^0.60.1",
+		"rollup": "0.60.7",
 		"rollup-plugin-node-resolve": "^3.3.0",
-		"rollup-plugin-typescript2": "^0.14.0",
-		"typescript": "^2.9.1"
+		"rollup-plugin-typescript2": "^0.15.1",
+		"typescript": "^2.9.2"
 	},
 	"dependencies": {
-		"@stardazed/adler32": "^0.1.0"
-	},
-	"files": [
-		"dist/indes.esm.js",
-		"dist/index.d.ts"
-	]
+		"@stardazed/adler32": "^1.0.0"
+	}
 }
