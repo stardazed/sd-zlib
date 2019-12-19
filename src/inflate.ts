@@ -90,9 +90,6 @@ export class Inflate {
 	private fullChecksum = 0; // expected checksum of original data
 	private inflatedSize = 0; // size in bytes of original data
 
-	// if Mode.BAD, inflateSync's marker bytes count
-	private marker = 0;
-
 	// mode independent information
 	private wbits = 0; // log2(window size) (8..15, defaults to 15)
 
@@ -178,13 +175,11 @@ export class Inflate {
 				if ((this.method & 0xf) !== Z_DEFLATED) {
 					this.mode = Mode.BAD;
 					z.msg = "unknown compression method";
-					this.marker = 5; // can't try inflateSync
 					break;
 				}
 				if ((this.method >> 4) + 8 > this.wbits) {
 					this.mode = Mode.BAD;
 					z.msg = "invalid window size";
-					this.marker = 5; // can't try inflateSync
 					break;
 				}
 				this.mode = Mode.FLAG;
@@ -209,7 +204,6 @@ export class Inflate {
 				if ((((this.method << 8) + b) % 31) !== 0) {
 					this.mode = Mode.BAD;
 					z.msg = "incorrect header check";
-					this.marker = 5; // can't try inflateSync
 					break;
 				}
 
@@ -268,7 +262,6 @@ export class Inflate {
 			case Mode.DICT0:
 				this.mode = Mode.BAD;
 				z.msg = "need dictionary";
-				this.marker = 0; // can try inflateSync
 				return ZStatus.STREAM_ERROR;
 
 			case Mode.MTIME0:
@@ -349,7 +342,6 @@ export class Inflate {
 				r = this.blocks.proc(z, r);
 				if (r === ZStatus.DATA_ERROR) {
 					this.mode = Mode.BAD;
-					this.marker = 0; // can try inflateSync
 					break;
 				}
 				if (r !== ZStatus.STREAM_END) {
@@ -426,55 +418,6 @@ export class Inflate {
 		}
 
 		this.blocks.set_dictionary(dictionary, index, length);
-		this.mode = Mode.BLOCKS;
-		return ZStatus.OK;
-	}
-
-	inflateSync(z: ZStream) {
-		let n; // number of bytes to look at
-		let p; // pointer to bytes
-		let m; // number of marker bytes found in a row
-
-		// set up
-		if (!z || !z.next_in) {
-			return ZStatus.STREAM_ERROR;
-		}
-		if (this.mode !== Mode.BAD) {
-			this.mode = Mode.BAD;
-			this.marker = 0;
-		}
-		n = z.avail_in;
-		if (n === 0) {
-			return ZStatus.BUF_ERROR;
-		}
-		p = z.next_in_index;
-		m = this.marker;
-
-		// search
-		while (n !== 0 && m < 4) {
-			if (z.next_in[p] === mark[m]) {
-				m++;
-			} else if (z.next_in[p] !== 0) {
-				m = 0;
-			} else {
-				m = 4 - m;
-			}
-			p++;
-			n--;
-		}
-
-		// restore
-		z.total_in += p - z.next_in_index;
-		z.next_in_index = p;
-		z.avail_in = n;
-		this.marker = m;
-
-		// return no joy or set up to restart on a new block
-		if (m !== 4) {
-			return ZStatus.DATA_ERROR;
-		}
-
-		this.blocks.reset();
 		this.mode = Mode.BLOCKS;
 		return ZStatus.OK;
 	}
