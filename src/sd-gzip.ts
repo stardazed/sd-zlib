@@ -1,8 +1,8 @@
 /**
- * @stardazed/zip - zip algorithm implementation
+ * @stardazed/gzip - GZip library implementation
  * Part of Stardazed
  * (c) 2018-Present by Arthur Langereis - @zenmumbler
- * https://github.com/stardazed/sd-zip
+ * https://github.com/stardazed/sd-gzip
  *
  * Copyright (c) 2013 Gildas Lormeau. All rights reserved.
  *

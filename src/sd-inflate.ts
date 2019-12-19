@@ -1,8 +1,8 @@
 /**
- * zip/sd-inflate - inflate external API
+ * gzip/sd-inflate - inflate external API
  * Part of Stardazed
  * (c) 2018-Present by Arthur Langereis - @zenmumbler
- * https://github.com/stardazed/sd-zip
+ * https://github.com/stardazed/sd-gzip
  */
 
 import { ZStatus } from "./common";

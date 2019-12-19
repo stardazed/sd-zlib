@@ -1,17 +1,17 @@
 {
-	"name": "@stardazed/zip",
-	"description": "Zip algorithm implementation",
+	"name": "@stardazed/gzip",
+	"description": "GZip library implementation",
 	"version": "1.0.0",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/stardazed/sd-zip.git"
+		"url": "https://github.com/stardazed/sd-gzip.git"
 	},
-	"homepage": "https://github.com/stardazed/sd-zip",
+	"homepage": "https://github.com/stardazed/sd-gzip",
 	"license": "Zlib",
-	"browser": "dist/sd-zip.esm.js",
-	"module": "dist/sd-zip.esm.js",
-	"types": "dist/sd-zip.d.ts",
-	"main": "dist/sd-zip.esm.js",
+	"browser": "dist/sd-gzip.esm.js",
+	"module": "dist/sd-gzip.esm.js",
+	"types": "dist/sd-gzip.d.ts",
+	"main": "dist/sd-gzip.esm.js",
 	"scripts": {
 		"build": "rollup -c",
 		"prepublishOnly": "rollup -c"

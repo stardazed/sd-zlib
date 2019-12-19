@@ -1,8 +1,8 @@
 /**
- * zip/zstream - zip i/o data stream structure
+ * gzip/zstream - gzip i/o data stream structure
  * Part of Stardazed
  * (c) 2018-Present by Arthur Langereis - @zenmumbler
- * https://github.com/stardazed/sd-zip
+ * https://github.com/stardazed/sd-gzip
  *
  * inflate.js (c) 2013 by Gildas Lormeau, part of the zip.js library
  * Based on zlib (c) 1995-2017 Jean-loup Gailly and Mark Adler

@@ -1,5 +1,5 @@
 /**
- * zip/adler32 -- compute the Adler-32 checksum of a data stream
+ * gzip/adler32 -- compute the Adler-32 checksum of a data stream
  * Copyright (C) 1995-2011, 2016 Mark Adler
  * Converted to TypeScript by Arthur Langereis (@zenmumbler)
  * from adler32.c, which can be found at:

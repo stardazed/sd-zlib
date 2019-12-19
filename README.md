@@ -1,4 +1,4 @@
-@stardazed/zip
+@stardazed/gzip
 ==============
 Decompresses data compressed with zlib, currently only decompression of `deflate` buffers.
 Supports optional DEFLATE headers and preset dictionaries.
@@ -6,9 +6,9 @@ Supports optional DEFLATE headers and preset dictionaries.
 Installation
 ------------
 ```
-pnpm add @stardazed/zip
-npm install @stardazed/zip
-yarn add @stardazed/zip
+pnpm add @stardazed/gzip
+npm install @stardazed/gzip
+yarn add @stardazed/gzip
 ```
 
 Usage
@@ -20,7 +20,7 @@ will correctly interpret and handle a DEFLATE header if it is present.
 the buffer without any gzip headers.
 
 ```js
-import { inflate } from "@stardazed/zip";
+import { inflate } from "@stardazed/gzip";
 
 const deflatedData = /* must be a Uint8Array */;
 inflate(deflatedData).then(
@@ -52,7 +52,7 @@ then this is ignored.
 
 
 ```js
-import { Inflater } from "@stardazed/zip";
+import { Inflater } from "@stardazed/gzip";
 
 const inflater = new Inflater(options /* see above */);
 

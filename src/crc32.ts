@@ -1,5 +1,5 @@
 /**
- * zip/crc32 -- compute the CRC-32 checksum of a buffer
+ * gzip/crc32 -- compute the CRC-32 checksum of a buffer
  * Copyright (C) 1995-2006, 2010, 2011, 2012, 2016 Mark Adler
  * Converted to TypeScript by Arthur Langereis (@zenmumbler)
  * from crc32.c, which can be found at:

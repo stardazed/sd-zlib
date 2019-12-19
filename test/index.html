@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
 	<meta charset="utf-8">
-	<title>sd-zip tests</title>
-	<script src="../dist/sd-zip.umd.js"></script>
+	<title>sd-gzip tests</title>
+	<script src="../dist/sd-gzip.umd.js"></script>
 </head>
 <body>
 <script type="module">
@@ -21,7 +21,7 @@
  */
 
 // @ts-ignore
-const { Inflater, inflate, adler32 } = sdZip;
+const { Inflater, inflate, adler32 } = sdGZip;
 
 function testInflateParts(fileName) {
 	return Promise.all([fetch(`./${fileName}.part1.deflate`), fetch(`./${fileName}.part2.deflate`), fetch(`./${fileName}.txt`)])
