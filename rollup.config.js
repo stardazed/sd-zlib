@@ -1,12 +1,12 @@
 // @ts-check
-import resolve from "rollup-plugin-node-resolve";
+import resolve from "@rollup/plugin-node-resolve";
+import tsc from "@rollup/plugin-typescript";
 import typescript from "typescript";
-import tsc from "rollup-plugin-typescript2";
 
 const banner = `/**
  * @stardazed/inflate - zip inflate algorithm implementation
  * Part of Stardazed
- * (c) 2018 by Arthur Langereis - @zenmumbler
+ * (c) 2018-Present by Arthur Langereis - @zenmumbler
  * https://github.com/stardazed/sd-inflate
  *
  * inflate.js (c) 2013 by Gildas Lormeau, part of the zip.js library
@@ -38,7 +38,6 @@ export default [
 			resolve({ browser: true }),
 			tsc({
 				typescript,
-				cacheRoot: "./build",
 				include: ["src/**/*.ts"],
 			}),
 		],
