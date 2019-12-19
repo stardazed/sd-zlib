@@ -8,7 +8,7 @@
  * Based on zlib (c) 1995-2017 Jean-loup Gailly and Mark Adler
  */
 
-import { ZLimits, ZStatus } from "./common";
+import { ZLimits, ZStatus, u8ArrayFromBufferSource } from "./common";
 import { ZStream } from "./zstream";
 import { InfBlocks } from "./infblocks";
 import { adler32 } from "./adler32";
@@ -397,9 +397,14 @@ export class Inflate {
 		}
 	}
 
-	inflateSetDictionary(dictionary: Uint8Array) {
+	inflateSetDictionary(dictSource: BufferSource) {
 		if (this.mode !== Mode.DICT0) {
 			return ZStatus.STREAM_ERROR;
+		}
+
+		const dictionary = u8ArrayFromBufferSource(dictSource);
+		if (! dictionary) {
+			return ZStatus.DATA_ERROR;
 		}
 
 		let index = 0;
