@@ -24,14 +24,11 @@ export default [
 				intro: banner
 			},
 			{
-				name: "sdInflate",
+				name: "sdZip",
 				file: "dist/sd-zip.umd.js",
 				format: "umd",
 				sourcemap: false,
 				intro: banner,
-				globals: {
-					"@stardazed/adler32": "sdAdler32"
-				}
 			}
 		],
 		plugins: [
@@ -39,9 +36,6 @@ export default [
 			tsc({
 				typescript
 			}),
-		],
-		external(id) {
-			return id.includes("@stardazed/");
-		}
+		]
 	}
 ];

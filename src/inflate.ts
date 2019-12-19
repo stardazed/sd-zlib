@@ -11,7 +11,7 @@
 import { ZLimits, ZStatus } from "./common";
 import { ZStream } from "./zstream";
 import { InfBlocks } from "./infblocks";
-import { adler32 } from "@stardazed/adler32";
+import { adler32 } from "./adler32";
 
 // preset dictionary flag in zlib header
 const PRESET_DICT = 0x20;

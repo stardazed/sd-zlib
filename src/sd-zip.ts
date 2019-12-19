@@ -37,4 +37,5 @@
  * and contributors of zlib.
  */
 
+export * from "./adler32";
 export * from "./sd-inflate";

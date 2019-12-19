@@ -1,5 +1,5 @@
 /**
- * @stardazed/zip - zip inflate algorithm implementation
+ * @stardazed/zip - zip algorithm implementation
  * Part of Stardazed
  * (c) 2018-Present by Arthur Langereis - @zenmumbler
  * https://github.com/stardazed/sd-zip
@@ -7,6 +7,14 @@
  * inflate.js (c) 2013 by Gildas Lormeau, part of the zip.js library
  * Based on zlib (c) 1995-2017 Jean-loup Gailly and Mark Adler
  */
+
+/**
+* Compute the Adler-32 checksum of the data in a buffer or buffer view.
+* @param data Source data, a BufferSource
+* @param seed Optional seed for the checksum
+*/
+export declare function adler32(source: BufferSource, seed?: number): number;
+
 
 export interface InflaterOptions {
 	/**
