@@ -9,11 +9,18 @@
  */
 
 /**
-* Compute the Adler-32 checksum of the data in a buffer or buffer view.
+* Compute the Adler-32 checksum of a buffer source
 * @param data Source data, a BufferSource
 * @param seed Optional seed for the checksum
 */
 export declare function adler32(source: BufferSource, seed?: number): number;
+
+/**
+ * Compute the CRC-32 checksum of a buffer source
+ * @param source Source data, a BufferSource
+ * @param seed Optional seed for the checksum
+ */
+export function crc32(source: BufferSource, seed?: number): number;
 
 
 export interface InflaterOptions {
