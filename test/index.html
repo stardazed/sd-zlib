@@ -2,24 +2,24 @@
 <html lang="en">
 <head>
 	<meta charset="utf-8">
-	<title>sd-inflate tests</title>
+	<title>sd-zip tests</title>
 	<script src="../node_modules/@stardazed/adler32/dist/sd-adler32.umd.js"></script>
-	<script src="../dist/sd-inflate.umd.js"></script>
+	<script src="../dist/sd-zip.umd.js"></script>
 </head>
 <body>
 <script type="module">
 // @ts-check
 /**
  * Just a quick manual testing page to check deflate results.
- *  
+ *
  * The text .deflate files were made by using gzip on some text files and manually
  * changing the file format to:
  * 0x7801, data(BLOCKS), checksum(CRC32)
- * 
+ *
  * The binary test file is the data part of a block from an FBX binary file
  * containing vertex data and a checksum, in its unaltered form:
  * 0x7801, data(BLOCKS), checksum(Adler32)
- */ 
+ */
 
 // @ts-ignore
 const { adler32 } = sdAdler32;
@@ -89,7 +89,7 @@ function testInflateBinary(fileName) {
 			const checkSumVerify = adler32(result);
 
 			console.info(checkSumStored.toString(16), checkSumVerify.toString(16));
-			
+
 			// report success
 			const success = checkSumStored === checkSumVerify;
 			console.info("TEST (binary) done", fileName, success);

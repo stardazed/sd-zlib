@@ -4,28 +4,28 @@ import tsc from "@rollup/plugin-typescript";
 import typescript from "typescript";
 
 const banner = `/**
- * @stardazed/inflate - zip inflate algorithm implementation
+ * @stardazed/zip - zip algorithm implementation
  * Part of Stardazed
  * (c) 2018-Present by Arthur Langereis - @zenmumbler
- * https://github.com/stardazed/sd-inflate
+ * https://github.com/stardazed/sd-zip
  *
  * inflate.js (c) 2013 by Gildas Lormeau, part of the zip.js library
- * Based on zlib (c) 1995-2017 Jean-loup Gailly and Mark Adler
+ * Based on zlib (c) 1995-Present Jean-loup Gailly and Mark Adler
  */`;
 
 export default [
 	{
-		input: "src/sd-inflate.ts",
+		input: "src/sd-zip.ts",
 		output: [
 			{
-				file: "dist/sd-inflate.esm.js",
+				file: "dist/sd-zip.esm.js",
 				format: "es",
 				sourcemap: false,
 				intro: banner
 			},
 			{
 				name: "sdInflate",
-				file: "dist/sd-inflate.umd.js",
+				file: "dist/sd-zip.umd.js",
 				format: "umd",
 				sourcemap: false,
 				intro: banner,

@@ -1,8 +1,8 @@
 /**
- * inflate/infblocks - block inflate method
+ * zip/infblocks - block inflate method
  * Part of Stardazed
- * (c) 2018 by Arthur Langereis - @zenmumbler
- * https://github.com/stardazed/sd-inflate
+ * (c) 2018-Present by Arthur Langereis - @zenmumbler
+ * https://github.com/stardazed/sd-zip
  *
  * inflate.js (c) 2013 by Gildas Lormeau, part of the zip.js library
  * Based on zlib (c) 1995-2017 Jean-loup Gailly and Mark Adler
@@ -136,10 +136,10 @@ export class InfBlocks implements ZBuffer {
 		let blens: number[] = []; // bit lengths of codes
 		const bb: InOut<number> = [0]; // bit length tree depth
 		const tb: InOut<number> = [0]; // bit length decoding tree
-	
+
 		const codes = this.codes; // if Mode.CODES, current state
 		const hufts = this.hufts;
-	
+
 		let last = 0; // true if this block is the last block
 
 		// copy input/output information to locals (UPDATE macro restores)

@@ -1,8 +1,8 @@
 /**
- * inflate/zstream - zip i/o data stream structure
+ * zip/zstream - zip i/o data stream structure
  * Part of Stardazed
- * (c) 2018 by Arthur Langereis - @zenmumbler
- * https://github.com/stardazed/sd-inflate
+ * (c) 2018-Present by Arthur Langereis - @zenmumbler
+ * https://github.com/stardazed/sd-zip
  *
  * inflate.js (c) 2013 by Gildas Lormeau, part of the zip.js library
  * Based on zlib (c) 1995-2017 Jean-loup Gailly and Mark Adler
@@ -34,7 +34,7 @@ export class ZStream {
 		this.next_out = new Uint8Array(OUTPUT_BUFSIZE);
 		this.avail_out = this.next_out.byteLength;
 		this.next_out_index = 0;
-	
+
 		this.total_in = this.total_out = 0;
 		this.msg = "";
 	}

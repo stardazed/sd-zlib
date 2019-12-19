@@ -1,15 +1,15 @@
 /**
- * inflate/infcodes - inner data loop
+ * zip/infcodes - inner data loop
  * Part of Stardazed
- * (c) 2018 by Arthur Langereis - @zenmumbler
- * https://github.com/stardazed/sd-inflate
+ * (c) 2018-Present by Arthur Langereis - @zenmumbler
+ * https://github.com/stardazed/sd-zip
  *
  * inflate.js (c) 2013 by Gildas Lormeau, part of the zip.js library
  * Based on zlib (c) 1995-2017 Jean-loup Gailly and Mark Adler
  */
 
 // InfCodes
-// Part of sd-inflate -- see index for copyright and info
+// Part of sd-zip -- see index for copyright and info
 // tslint:disable:variable-name
 
 import { ZBuffer, ZStatus, NumArray, inflate_mask } from "./common";

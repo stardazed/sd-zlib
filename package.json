@@ -1,17 +1,17 @@
 {
-	"name": "@stardazed/inflate",
-	"description": "Zip inflate algorithm implementation",
+	"name": "@stardazed/zip",
+	"description": "Zip algorithm implementation",
 	"version": "1.0.0",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/stardazed/sd-inflate.git"
+		"url": "https://github.com/stardazed/sd-zip.git"
 	},
-	"homepage": "https://github.com/stardazed/sd-inflate",
+	"homepage": "https://github.com/stardazed/sd-zip",
 	"license": "Zlib",
-	"browser": "dist/sd-inflate.esm.js",
-	"module": "dist/sd-inflate.esm.js",
-	"types": "dist/sd-inflate.d.ts",
-	"main": "dist/sd-inflate.esm.js",
+	"browser": "dist/sd-zip.esm.js",
+	"module": "dist/sd-zip.esm.js",
+	"types": "dist/sd-zip.d.ts",
+	"main": "dist/sd-zip.esm.js",
 	"scripts": {
 		"build": "rollup -c",
 		"prepublishOnly": "rollup -c"

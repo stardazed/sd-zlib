@@ -1,8 +1,8 @@
 /**
- * @stardazed/inflate - zip inflate algorithm implementation
+ * @stardazed/zip - zip algorithm implementation
  * Part of Stardazed
- * (c) 2018 by Arthur Langereis - @zenmumbler
- * https://github.com/stardazed/sd-inflate
+ * (c) 2018-Present by Arthur Langereis - @zenmumbler
+ * https://github.com/stardazed/sd-zip
  *
  * Copyright (c) 2013 Gildas Lormeau. All rights reserved.
  *
@@ -12,8 +12,8 @@
  * 1. Redistributions of source code must retain the above copyright notice,
  * this list of conditions and the following disclaimer.
  *
- * 2. Redistributions in binary form must reproduce the above copyright 
- * notice, this list of conditions and the following disclaimer in 
+ * 2. Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in
  * the documentation and/or other materials provided with the distribution.
  *
  * 3. The names of the authors may not be used to endorse or promote products
@@ -29,7 +29,7 @@
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
+ *
  *
  * This program is based on JZlib 1.0.2 ymnk, JCraft,Inc.
  * JZlib is based on zlib-1.1.3, so all credit should go authors

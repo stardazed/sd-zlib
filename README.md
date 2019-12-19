@@ -1,15 +1,14 @@
-@stardazed/inflate
-==================
-Zip inflate algorithm implementation.
-Decompresses data compressed with zlib.
+@stardazed/zip
+==============
+Decompresses data compressed with zlib, currently only decompression of `deflate` buffers.
 Supports optional DEFLATE headers and preset dictionaries.
 
 Installation
 ------------
 ```
-npm install @stardazed/inflate
-pnpm install @stardazed/inflate
-yarn add @stardazed/inflate
+pnpm add @stardazed/zip
+npm install @stardazed/zip
+yarn add @stardazed/zip
 ```
 
 Usage
@@ -21,7 +20,7 @@ will correctly interpret and handle a DEFLATE header if it is present.
 the buffer without any gzip headers.
 
 ```js
-import { inflate } from "@stardazed/inflate";
+import { inflate } from "@stardazed/zip";
 
 const deflatedData = /* must be a Uint8Array */;
 inflate(deflatedData).then(
@@ -58,22 +57,23 @@ import { Inflater } from "@stardazed/inflate";
 const inflater = new Inflater(options /* see above */);
 
 // then, each time a new chunk of data becomes available:
-try {
-    inflater.append(chunk); // chunk must be an Uint8Array
-}
-catch (error) {
-    // handle errors (could be bad data, invalid header, etc.)
-}
+inflater.append(compressedData) // compressedData must be an Uint8Array
+	.then(buffers => {
+		// buffers is an array of 0 or more Uint8Array buffers
+	})
+	.catch(error => {
+		// handle error
+	});
 
 // when all data has been appended:
-try {
-	const data = inflater.finish();
-	// ...act on data
-}
-catch (error) {
-	// an error will be thrown if the deflated data was incomplete
-	// and you did not specify allowPartialData in the options
-}
+inflater.finish()
+	.then(() => {
+		// all is well, close up on your end
+	})
+	.catch(error) {
+		// an error will be returned if the deflated data was incomplete
+		// and you did not specify allowPartialData in the options
+	}
 ```
 
 Copyright
