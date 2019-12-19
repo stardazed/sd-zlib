@@ -18,12 +18,9 @@
 	},
 	"devDependencies": {
 		"@rollup/plugin-node-resolve": "^6.0.0",
-		"@rollup/plugin-typescript": "^2.0.1",
 		"rollup": "^1.27.13",
+		"rollup-plugin-typescript2": "^0.25.3",
 		"tslib": "^1.10.0",
 		"typescript": "^3.7.3"
-	},
-	"dependencies": {
-		"@stardazed/adler32": "^1.0.0"
 	}
 }

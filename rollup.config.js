@@ -1,6 +1,6 @@
 // @ts-check
 import resolve from "@rollup/plugin-node-resolve";
-import tsc from "@rollup/plugin-typescript";
+import tsc from "rollup-plugin-typescript2";
 import typescript from "typescript";
 
 const banner = `/**
@@ -37,8 +37,7 @@ export default [
 		plugins: [
 			resolve({ browser: true }),
 			tsc({
-				typescript,
-				include: ["src/**/*.ts"],
+				typescript
 			}),
 		],
 		external(id) {
