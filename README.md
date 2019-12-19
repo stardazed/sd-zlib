@@ -52,7 +52,7 @@ then this is ignored.
 
 
 ```js
-import { Inflater } from "@stardazed/inflate";
+import { Inflater } from "@stardazed/zip";
 
 const inflater = new Inflater(options /* see above */);
 

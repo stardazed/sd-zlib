@@ -3,7 +3,6 @@
 <head>
 	<meta charset="utf-8">
 	<title>sd-zip tests</title>
-	<script src="../node_modules/@stardazed/adler32/dist/sd-adler32.umd.js"></script>
 	<script src="../dist/sd-zip.umd.js"></script>
 </head>
 <body>
@@ -22,9 +21,7 @@
  */
 
 // @ts-ignore
-const { adler32 } = sdAdler32;
-// @ts-ignore
-const { Inflater, inflate } = sdInflate;
+const { Inflater, inflate, adler32 } = sdZip;
 
 function testInflateParts(fileName) {
 	return Promise.all([fetch(`./${fileName}.part1.deflate`), fetch(`./${fileName}.part2.deflate`), fetch(`./${fileName}.txt`)])

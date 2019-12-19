@@ -1,4 +1,4 @@
-Let's test sd-zip!
+Let's test sd-inflate!
 
 Some more text.
 And such.
