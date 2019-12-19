@@ -144,6 +144,18 @@ export class Inflater {
 
 		return this.mergeBuffers(this.buffers);
 	}
+
+	get fileName() {
+		return this.inflate.fileName;
+	}
+
+	get checksum() {
+		return this.inflate.checksum;
+	}
+
+	get fullSize() {
+		return this.inflate.fullSize;
+	}
 }
 
 /**

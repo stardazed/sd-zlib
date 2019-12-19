@@ -47,12 +47,14 @@ export class InfBlocks implements ZBuffer {
 	bitb = 0; // bit buffer
 	read = 0; // window read pointer
 	write = 0; // window write pointer
+	last = 0; // was this the last block?
 
 	reset() {
 		this.bitk = 0;
 		this.bitb = 0;
 		this.read = 0;
 		this.write = 0;
+		this.last = 0;
 	}
 
 	// copy as much as possible from the sliding window to the output area
@@ -140,8 +142,6 @@ export class InfBlocks implements ZBuffer {
 		const codes = this.codes; // if Mode.CODES, current state
 		const hufts = this.hufts;
 
-		let last = 0; // true if this block is the last block
-
 		// copy input/output information to locals (UPDATE macro restores)
 		// {
 		p = z.next_in_index;
@@ -158,6 +158,9 @@ export class InfBlocks implements ZBuffer {
 		while (true) {
 			switch (this.mode) {
 			case Mode.TYPE:
+				if (this.last) {
+					return ZStatus.STREAM_END;
+				}
 				while (k < (3)) {
 					if (n !== 0) {
 						r = ZStatus.OK;
@@ -175,7 +178,7 @@ export class InfBlocks implements ZBuffer {
 					k += 8;
 				}
 				t = /* (int) */(b & 7);
-				last = t & 1;
+				this.last = t & 1;
 
 				switch (t >>> 1) {
 				case 0: // stored
@@ -270,7 +273,7 @@ export class InfBlocks implements ZBuffer {
 				}
 				left = (b & 0xffff);
 				b = k = 0; // dump bits
-				this.mode = left !== 0 ? Mode.STORED : (last !== 0 ? Mode.DRY : Mode.TYPE);
+				this.mode = left !== 0 ? Mode.STORED : (this.last !== 0 ? Mode.DRY : Mode.TYPE);
 				break;
 			case Mode.STORED:
 				if (n === 0) {
@@ -326,7 +329,7 @@ export class InfBlocks implements ZBuffer {
 				if (left !== 0) {
 					break;
 				}
-				this.mode = last !== 0 ? Mode.DRY : Mode.TYPE;
+				this.mode = this.last !== 0 ? Mode.DRY : Mode.TYPE;
 				break;
 			case Mode.TABLE:
 
@@ -571,7 +574,7 @@ export class InfBlocks implements ZBuffer {
 				q = this.write;
 				m = /* (int) */(q < this.read ? this.read - q - 1 : this.end - q);
 
-				if (last === 0) {
+				if (this.last === 0) {
 					this.mode = Mode.TYPE;
 					break;
 				}
