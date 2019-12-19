@@ -52,6 +52,29 @@ export interface ZBuffer {
 	inflate_flush(z: ZStream, r: ZStatus): ZStatus;
 }
 
+/**
+ * Reverse the byte order of a 32-bit unsigned integer
+ * @internal
+ */
 export const swap32 = (q: number) =>
 	(((q >>> 24) & 0xff) | ((q >>> 8) & 0xff00) |
 	((q & 0xff00) << 8) | ((q & 0xff) << 24)) >>> 0;
+
+/**
+ * Returns the appropriate Uin8Array view for any BufferSource
+ * or undefined in case of failure.
+ * @internal
+ */
+export function u8ArrayFromBufferSource(source: BufferSource): Uint8Array | undefined {
+	if (source instanceof ArrayBuffer) {
+		return new Uint8Array(source);
+	}
+	if (! ArrayBuffer.isView(source)) {
+		return undefined;
+	}
+	if (! (source instanceof Uint8Array)) {
+		return new Uint8Array(source.buffer, source.byteOffset, source.byteLength);
+	}
+
+	return source;
+}

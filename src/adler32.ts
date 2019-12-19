@@ -6,24 +6,20 @@
  * https://github.com/madler/zlib/blob/master/adler32.c
  */
 
+import { u8ArrayFromBufferSource } from "./common";
+
 /**
  * Compute the Adler-32 checksum of the data in a buffer or buffer view.
  * @param data Source data, a BufferSource
  * @param seed Optional seed for the checksum
  */
 export function adler32(source: BufferSource, seed = 1) {
-	if (source instanceof ArrayBuffer) {
-		source = new Uint8Array(source);
-	}
-	else if (! ArrayBuffer.isView(source)) {
-		throw new TypeError("source must be an ArrayBuffer, a TypedArray or a DataView");
-	}
-	else if (! (source instanceof Uint8Array)) {
-		// ensure we look at one byte at a time
-		source = new Uint8Array(source.buffer, source.byteOffset, source.byteLength);
+	const view = u8ArrayFromBufferSource(source);
+	if (! view) {
+		throw new TypeError("source must be a BufferSource");
 	}
 
-	return computeAdler32(source as Uint8Array, seed);
+	return computeAdler32(view, seed);
 }
 
 const BASE = 65521;     /* largest prime smaller than 65536 */
