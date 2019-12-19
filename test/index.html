@@ -21,7 +21,7 @@
  */
 
 // @ts-ignore
-const { Inflater, inflate, adler32 } = sdGZip;
+const { Inflater, inflate, adler32, crc32 } = sdGZip;
 
 function testInflateParts(fileName) {
 	return Promise.all([fetch(`./${fileName}.part1.deflate`), fetch(`./${fileName}.part2.deflate`), fetch(`./${fileName}.txt`)])
@@ -29,18 +29,22 @@ function testInflateParts(fileName) {
 		.then(([ab, ab2, text]) => {
 			const inflater = new Inflater();
 			// pass in two buffers
-			const dataDeflated1 = new Uint8Array(ab, 0, ab.byteLength);
+			const dataDeflated1 = new Uint8Array(ab);
 			inflater.append(dataDeflated1);
-			const dataDeflated2 = new Uint8Array(ab2, 0, ab2.byteLength); // no checksum was added to the parts file
+			const dataDeflated2 = new Uint8Array(ab2); // no checksum was added to the parts file
 			inflater.append(dataDeflated2);
 
 			const result = inflater.finish();
+
+			const checkSumStored = (inflater.checksum) >>> 0;
+			const checkSumVerify = (crc32(result)) >>> 0;
+			console.info("CRC", checkSumStored.toString(16), checkSumVerify.toString(16));
 
 			// check decompressed data against original
 			const contents = (new TextDecoder()).decode(result);
 
 			// report success
-			const success = contents === text;
+			const success = checkSumStored === checkSumVerify && contents === text;
 			console.info("TEST (multi-part) done", fileName, success);
 			return success;
 		})
@@ -55,7 +59,7 @@ function testInflateText(fileName) {
 		.then(([rD, rT]) => Promise.all([rD.arrayBuffer(), rT.text()]))
 		.then(async ([ab, text]) => {
 			// decompress data
-			const result = await inflate(new Uint8Array(ab, 0, ab.byteLength - 4));
+			const result = await inflate(new Uint8Array(ab));
 
 			// check decompressed data against original
 			const contents = (new TextDecoder()).decode(result);
@@ -71,6 +75,33 @@ function testInflateText(fileName) {
 		});
 }
 
+function testInflateTextGzip(fileName) {
+	return Promise.all([fetch(`./${fileName}.gz`), fetch(`./${fileName}.txt`)])
+		.then(([rD, rT]) => Promise.all([rD.arrayBuffer(), rT.text()]))
+		.then(async ([ab, text]) => {
+			const inflater = new Inflater();
+			// decompress data
+			inflater.append(new Uint8Array(ab));
+			const result = inflater.finish();
+
+			// check decompressed data against original
+			const contents = (new TextDecoder()).decode(result);
+
+			const checkSumStored = (inflater.checksum) >>> 0;
+			const checkSumVerify = (crc32(result)) >>> 0;
+			console.info("CRC", checkSumStored.toString(16), checkSumVerify.toString(16));
+			console.info("SIZE", inflater.fullSize, contents.length);
+
+			// report success
+			const success = contents === text;
+			console.info("TEST (text-gzip) done", fileName, inflater.fileName, success);
+			return success;
+		})
+		.catch(err => {
+			console.warn("Error during test (text-gzip)", fileName, err);
+			return false;
+		});
+}
 
 function testInflateBinary(fileName) {
 	return fetch(`./${fileName}.deflate`)
@@ -78,14 +109,13 @@ function testInflateBinary(fileName) {
 		.then(ab => {
 			// decompress data
 			const inflater = new Inflater({ allowPartialData: true });
-			const dataDeflated = new Uint8Array(ab, 0, ab.byteLength - 4);
+			const dataDeflated = new Uint8Array(ab);
 			inflater.append(dataDeflated);
 			const result = inflater.finish();
 
-			const checkSumStored = new DataView(ab, ab.byteLength - 4, 4).getUint32(0, false);
+			const checkSumStored = inflater.checksum;
 			const checkSumVerify = adler32(result);
-
-			console.info(checkSumStored.toString(16), checkSumVerify.toString(16));
+			console.info("ADLER", checkSumStored.toString(16), checkSumVerify.toString(16));
 
 			// report success
 			const success = checkSumStored === checkSumVerify;
@@ -101,8 +131,10 @@ function testInflateBinary(fileName) {
 function runTests() {
 	Promise.all([
 		testInflateText("simple"),
+		testInflateTextGzip("simple"),
 		testInflateText("paradiselost"),
 		testInflateParts("paradiselost"),
+		testInflateTextGzip("paradiselost"),
 		testInflateBinary("vertices")
 	])
 	.then(results => {
