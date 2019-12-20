@@ -22,23 +22,15 @@ export declare function adler32(source: BufferSource, seed?: number): number;
  */
 export function crc32(source: BufferSource, seed?: number): number;
 
-
 export interface InflaterOptions {
 	/**
-	 * If set, the DEFLATE header and optional preset dictionary
-	 * checksum will be parsed and verified.
-	 * Set to false if you only have the compressed data, e.g.
-	 * of a gzip file.
-	 * @default true
-	 */
-	dataIncludesHeader?: boolean;
-
-	/**
-	 * If set to true, then you can call {{finish}} mid-stream.
-	 * This is only useful if you know you have incomplete data.
+	 * If set, headers and trailers will be assumed to be missing.
+	 * Set to true if you only have the raw compressed data.
+	 * Since checksums and other metadata is unavaiable when this is
+	 * set, no validity checking on the resulting data.
 	 * @default false
 	 */
-	allowPartialData?: boolean;
+	noHeadersOrTrailers?: boolean;
 
 	/**
 	 * Provide an optional precalculated lookup dictionary.
@@ -46,9 +38,18 @@ export interface InflaterOptions {
 	 * If used, the Adler32 checksum of the dictionary is verified
 	 * against the checksum stored in the deflated data.
 	 * If {{dataIncludesHeader}} is false, then this is ignored.
+	 * If the data is in gzip format, then this is ignored
 	 * @default undefined
 	 */
-	presetDictionary?: BufferSource;
+	deflateDictionary?: BufferSource;
+}
+
+export interface InflateResult {
+	success: boolean;
+	complete: boolean;
+	checkSum: "match" | "mismatch" | "unchecked";
+	fileSize: "match" | "mismatch" | "unchecked";
+	fileName: string;
 }
 
 export class Inflater {
@@ -57,18 +58,15 @@ export class Inflater {
 	/**
 	 * Add more data to be decompressed. Call this as many times as
 	 * needed as deflated data becomes available.
-	 * @param data A Uint8 view of the compressed data.
-	 * @throws {Error} Will throw in case of bad data
+	 * @param data a buffer or bufferview containing compressed data
 	 */
-	append(data: BufferSource): void;
+	append(data: BufferSource): Uint8Array[];
 
 	/**
-	 * Complete the inflate action and return the resulting
-	 * data.
-	 * @throws {Error} If the data is incomplete and you did
-	 * not set allowPartialData in the constructor.
+	 * Complete the inflate action and return the result of all possible
+	 * sanity checks and some metadata when available.
 	 */
-	finish(): Uint8Array;
+	finish(): InflateResult;
 }
 
 /**
@@ -76,8 +74,10 @@ export class Inflater {
  * a simple, Promise-based way to inflate data. It detects any headers
  * and will act appropriately. Unless you need more control over the
  * inflate process, it is recommended to use this function.
- * @param data The deflated data buffer
- * @param presetDict Optional preset deflate dictionary
- * @returns A promise to the re-inflated data buffer
+ * @param data a buffer or buffer view on the deflated data
+ * @param deflateDictionary optional preset DEFLATE dictionary
+ * @returns a promise to the re-inflated data
  */
-export function inflate(data: BufferSource, presetDict?: Uint8Array): Promise<Uint8Array>;
+export function inflate(data: BufferSource, deflateDictionary?: BufferSource);
+
+export function mergeBuffers(buffers: Uint8Array[]);

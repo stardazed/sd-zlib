@@ -7,24 +7,19 @@
 
 import { ZStatus, u8ArrayFromBufferSource } from "./common";
 import { ZStream, OUTPUT_BUFSIZE } from "./zstream";
-import { Inflate } from "./inflate";
+import { Inflate, ContainerFormat } from "./inflate";
+import { crc32 } from "./crc32";
+import { adler32 } from "./adler32";
 
 export interface InflaterOptions {
 	/**
-	 * If set, the DEFLATE header and optional preset dictionary
-	 * checksum will be parsed and verified.
-	 * Set to false if you only have the compressed data, e.g.
-	 * of a gzip file.
-	 * @default true
-	 */
-	dataIncludesHeader?: boolean;
-
-	/**
-	 * If set to true, then you can call {{finish}} mid-stream.
-	 * This is only useful if you know you have incomplete data.
+	 * If set, headers and trailers will be assumed to be missing.
+	 * Set to true if you only have the raw compressed data.
+	 * Since checksums and other metadata is unavaiable when this is
+	 * set, no validity checking on the resulting data.
 	 * @default false
 	 */
-	allowPartialData?: boolean;
+	noHeadersOrTrailers?: boolean;
 
 	/**
 	 * Provide an optional precalculated lookup dictionary.
@@ -35,29 +30,43 @@ export interface InflaterOptions {
 	 * If the data is in gzip format, then this is ignored
 	 * @default undefined
 	 */
-	presetDictionary?: BufferSource;
+	deflateDictionary?: BufferSource;
+}
+
+export interface InflateResult {
+	success: boolean;
+	complete: boolean;
+	checkSum: "match" | "mismatch" | "unchecked";
+	fileSize: "match" | "mismatch" | "unchecked";
+	fileName: string;
 }
 
 export class Inflater {
 	private inflate: Inflate;
 	private z: ZStream;
 	private customDict: BufferSource | undefined;
-	private allowPartialData: boolean;
-	private buffers: Uint8Array[];
+	private checksum: number | undefined;
 
 	constructor(options?: InflaterOptions) {
 		options = options || {};
-		const parseHeader = options.dataIncludesHeader === undefined ? true : !!options.dataIncludesHeader;
-		this.allowPartialData = options.allowPartialData === undefined ? false : !!options.allowPartialData;
+		if (options.noHeadersOrTrailers !== undefined && options.noHeadersOrTrailers !== true && options.noHeadersOrTrailers !== false)  {
+			throw new TypeError("options.noHeadersOrTrailers must be undefined or true or false");
+		}
+		const blocksOnly = options.noHeadersOrTrailers === undefined ? false : options.noHeadersOrTrailers;
 
-		if (options.presetDictionary !== undefined && !(options.presetDictionary instanceof Uint8Array)) {
-			throw new TypeError("options.presetDictionary must be undefined or a Uint8Array");
+		if (options.deflateDictionary !== undefined) {
+			if (blocksOnly) {
+				throw new RangeError("options.presetDictionary cannot be set when options.noHeadersOrTrailers is true");
+			}
+			if (u8ArrayFromBufferSource(options.deflateDictionary) === undefined) {
+				throw new TypeError("options.presetDictionary must be undefined or a buffer or a buffer view");
+			}
+			this.customDict = options.deflateDictionary;
 		}
 
-		this.inflate = new Inflate(parseHeader);
+		this.inflate = new Inflate(blocksOnly);
 		this.z = new ZStream();
-		this.customDict = options.presetDictionary;
-		this.buffers = [];
+		this.customDict = options.deflateDictionary;
 	}
 
 	/**
@@ -65,16 +74,17 @@ export class Inflater {
 	 * needed as deflated data becomes available.
 	 * @param data a buffer or bufferview containing compressed data
 	 */
-	append(data: BufferSource) {
+	append(data: BufferSource): Uint8Array[] {
 		const chunk = u8ArrayFromBufferSource(data);
 		if (! (chunk instanceof Uint8Array)) {
 			throw new TypeError("data must be a buffer or buffer view");
 		}
 		if (chunk.length === 0) {
-			return;
+			return [];
 		}
 
-		const { inflate, z, buffers } = this;
+		const { inflate, z } = this;
+		const outBuffers: Uint8Array[] = [];
 		let nomoreinput = false;
 		z.append(chunk);
 
@@ -90,74 +100,83 @@ export class Inflater {
 			const err = inflate.inflate(z);
 			if (nomoreinput && (err === ZStatus.BUF_ERROR)) {
 				if (z.avail_in !== 0) {
-					throw new Error("inflating: bad input");
+					throw new Error("inflate error: bad input");
 				}
 			}
 			else if (err === ZStatus.NEED_DICT) {
 				if (this.customDict) {
 					const dictErr = inflate.inflateSetDictionary(this.customDict);
 					if (dictErr !== ZStatus.OK) {
-						throw new Error("Custom dictionary is invalid for this data");
+						throw new Error("Custom dictionary is not valid for this data");
 					}
 				}
 				else {
-					throw new Error("Custom dictionary required");
+					throw new Error("Custom dictionary required for this data");
 				}
 			}
 			else if (err !== ZStatus.OK && err !== ZStatus.STREAM_END) {
-				throw new Error("inflating: " + z.msg);
+				throw new Error("inflate error: " + z.msg);
 			}
 			if ((nomoreinput || err === ZStatus.STREAM_END) && (z.avail_in === chunk.length)) {
-				throw new Error("inflating: bad input");
+				throw new Error("inflate error: bad input data");
 			}
 			if (z.next_out_index) {
-				if (z.next_out_index === OUTPUT_BUFSIZE) {
-					buffers.push(new Uint8Array(z.next_out));
+				const nextBuffer = new Uint8Array(z.next_out.subarray(0, z.next_out_index));
+
+				// update running checksum of output data
+				const useCRC = inflate.containerFormat === ContainerFormat.GZip;
+				if (this.checksum === undefined) {
+					this.checksum = useCRC ? 0 : 1; // initial seeds: crc32 => 0, adler32 => 1
+				}
+				if (useCRC) {
+					this.checksum = crc32(nextBuffer, this.checksum);
 				}
 				else {
-					buffers.push(new Uint8Array(z.next_out.subarray(0, z.next_out_index)));
+					this.checksum = adler32(nextBuffer, this.checksum);
 				}
+
+				outBuffers.push(nextBuffer);
 			}
 		} while (z.avail_in > 0 || z.avail_out === 0);
-	}
 
-	private mergeBuffers(buffers: Uint8Array[]) {
-		const totalSize = buffers.map(b => b.byteLength).reduce((s, l) => s + l, 0);
-		const output = new Uint8Array(totalSize);
-
-		let offset = 0;
-		for (const buf of buffers) {
-			output.set(buf, offset);
-			offset += buf.length;
-		}
-		return output;
+		return outBuffers;
 	}
 
 	/**
-	 * Complete the inflate action and return the resulting
-	 * data.
-	 * @throws {Error} If the data is incomplete and you did
-	 * not set allowPartialData in the constructor.
+	 * Complete the inflate action and return the result of all possible
+	 * sanity checks and some metadata when available.
 	 */
-	finish() {
-		if (! this.inflate.isComplete && ! this.allowPartialData) {
-			throw new Error("Cannot finish inflating incomplete data.");
-		}
+	finish(): InflateResult {
+		const storedChecksum = this.inflate.checksum;
+		const storedSize = this.inflate.fullSize;
+		const complete = this.inflate.isComplete;
 
-		return this.mergeBuffers(this.buffers);
-	}
+		const checkSum = (storedChecksum === 0) ? "unchecked" : (storedChecksum === this.checksum ? "match" : "mismatch");
+		const fileSize = (storedSize === 0) ? "unchecked" : (storedSize === this.z.total_out ? "match" : "mismatch");
+		const success = complete && checkSum !== "mismatch" && fileSize !== "mismatch";
 
-	get fileName() {
-		return this.inflate.fileName;
-	}
+		const fileName = this.inflate.fileName;
 
-	get checksum() {
-		return this.inflate.checksum;
+		return {
+			success,
+			complete,
+			checkSum,
+			fileSize,
+			fileName
+		};
 	}
+}
 
-	get fullSize() {
-		return this.inflate.fullSize;
+export function mergeBuffers(buffers: Uint8Array[]) {
+	const totalSize = buffers.map(b => b.byteLength).reduce((s, l) => s + l, 0);
+	const output = new Uint8Array(totalSize);
+
+	let offset = 0;
+	for (const buf of buffers) {
+		output.set(buf, offset);
+		offset += buf.length;
 	}
+	return output;
 }
 
 /**
@@ -166,32 +185,48 @@ export class Inflater {
  * and will act appropriately. Unless you need more control over the
  * inflate process, it is recommended to use this function.
  * @param data a buffer or buffer view on the deflated data
- * @param presetDictionary optional preset DEFLATE dictionary
+ * @param deflateDictionary optional preset DEFLATE dictionary
  * @returns a promise to the re-inflated data
  */
-export function inflate(data: BufferSource, presetDictionary?: BufferSource) {
-	return new Promise<Uint8Array>(resolve => {
+export function inflate(data: BufferSource, deflateDictionary?: BufferSource) {
+	return new Promise<Uint8Array>((resolve, reject) => {
 		const input = u8ArrayFromBufferSource(data);
 		if (! (input instanceof Uint8Array)) {
 			throw new TypeError("data must be a buffer or buffer view");
 		}
 		if (input.length < 2) {
-			throw new TypeError("data buffer is invalid");
+			throw new TypeError("data buffer is too small");
 		}
 
 		const options: InflaterOptions = {
-			presetDictionary
+			deflateDictionary
 		};
 
 		// check for a deflate or gzip header
 		const [method, flag] = input;
-		options.dataIncludesHeader =
+		const startsWithIdent =
 			/* DEFLATE */ (method === 0x78 && (flag === 1 || flag === 0x20)) ||
 			/* GZIP */ (method === 0x1F && flag === 0x8B);
+		options.noHeadersOrTrailers = !startsWithIdent;
 
 		// single chunk inflate
 		const inflater = new Inflater(options);
-		inflater.append(input);
-		resolve(inflater.finish());
+		const buffers = inflater.append(input);
+		const result = inflater.finish();
+
+		if (! result.success) {
+			if (! result.complete) {
+				return reject("Unexpected EOF during decompression");
+			}
+			if (result.checkSum === "mismatch") {
+				return reject("Data integrity check failed");
+			}
+			if (result.fileSize === "mismatch") {
+				return reject("Data size check failed");
+			}
+			return reject("Decompression error");
+		}
+
+		resolve(mergeBuffers(buffers));
 	});
 }
