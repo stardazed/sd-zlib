@@ -13,11 +13,14 @@
  *
  * The text .deflate files were made by using gzip on some text files and manually
  * changing the file format to:
- * 0x7801, data(BLOCKS), checksum(CRC32)
+ * 0x7801, data(BLOCKS), checksum(Adler32)
  *
  * The binary test file is the data part of a block from an FBX binary file
  * containing vertex data and a checksum, in its unaltered form:
  * 0x7801, data(BLOCKS), checksum(Adler32)
+ *
+ * The text .gz files were compressed by taking the text files
+ * and running gzip on them, storing them unaltered
  */
 
 // @ts-ignore
@@ -62,6 +65,27 @@ function testInflateText(fileName) {
 			// report success
 			const success = contents === text;
 			console.info("TEST (text) done", fileName, success);
+			return success;
+		})
+		.catch(err => {
+			console.warn("Error during test (text)", fileName, err);
+			return false;
+		});
+}
+
+function testInflateTextRaw(fileName) {
+	return Promise.all([fetch(`./${fileName}.raw`), fetch(`./${fileName}.txt`)])
+		.then(([rD, rT]) => Promise.all([rD.arrayBuffer(), rT.text()]))
+		.then(async ([ab, text]) => {
+			// decompress data
+			const result = await inflate(ab);
+
+			// check decompressed data against original
+			const contents = (new TextDecoder()).decode(result);
+
+			// report success
+			const success = contents === text;
+			console.info("TEST (text-raw) done", fileName, success);
 			return success;
 		})
 		.catch(err => {
@@ -116,6 +140,7 @@ function runTests() {
 	Promise.all([
 		testInflateText("simple"),
 		testInflateTextGzip("simple"),
+		testInflateTextRaw("simple"),
 		testInflateText("paradiselost"),
 		testInflateParts("paradiselost"),
 		testInflateTextGzip("paradiselost"),
