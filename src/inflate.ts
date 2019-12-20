@@ -48,8 +48,8 @@ const enum Mode {
 	EXTRA = 17,
 	NAME = 18,
 	COMMENT = 19,
-	FHCRC0 = 20,
-	FHCRC1 = 21,
+	HCRC0 = 20,
+	HCRC1 = 21,
 
 	// shared
 	BLOCKS = 22, // decompressing blocks
@@ -75,8 +75,6 @@ const enum GFlags {
 	FNAME = 0x08,
 	FCOMMENT = 0x10,
 }
-
-const mark = [ 0, 0, 0xff, 0xff ];
 
 export class Inflate {
 	private mode: Mode; // current inflate mode
@@ -291,7 +289,7 @@ export class Inflate {
 						this.mode = Mode.COMMENT;
 					}
 					else if (this.gflags & GFlags.FHCRC) {
-						this.mode = Mode.FHCRC0;
+						this.mode = Mode.HCRC0;
 					}
 					else {
 						this.mode = Mode.BLOCKS;
@@ -305,8 +303,8 @@ export class Inflate {
 			case Mode.EXTRA0:
 			case Mode.EXTRA1:
 			case Mode.EXTRA1:
-			case Mode.FHCRC0:
-			case Mode.FHCRC1:
+			case Mode.HCRC0:
+			case Mode.HCRC1:
 				this.mode = Mode.BAD;
 				z.msg = "unsupported field";
 				break;
@@ -330,7 +328,7 @@ export class Inflate {
 						this.mode = Mode.COMMENT;
 					}
 					else if (this.gflags & GFlags.FHCRC) {
-						this.mode = Mode.FHCRC0;
+						this.mode = Mode.HCRC0;
 					}
 					else {
 						this.mode = Mode.BLOCKS;
@@ -369,7 +367,14 @@ export class Inflate {
 				z.avail_in--;
 				z.total_in++;
 				b = (z.next_in[z.next_in_index++]) & 0xff;
-				this.fullChecksum = (this.fullChecksum >>> 8) | (b << 24);
+				if (this.isGZip) {
+					// CRC32 is stored in LSB order
+					this.fullChecksum = (this.fullChecksum >>> 8) | (b << 24);
+				}
+				else {
+					// ADLER32 is stored in MSB order
+					this.fullChecksum = (this.fullChecksum << 8) | b;
+				}
 				this.mode++;
 
 				// deflate does not have the inflated size field
