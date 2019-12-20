@@ -183,9 +183,11 @@ export function inflate(data: BufferSource, presetDictionary?: BufferSource) {
 			presetDictionary
 		};
 
-		// check for a deflate header
-		options.dataIncludesHeader = (method === 0x78 && (flag === 1 || flag === 0x20));
+		// check for a deflate or gzip header
 		const [method, flag] = input;
+		options.dataIncludesHeader =
+			/* DEFLATE */ (method === 0x78 && (flag === 1 || flag === 0x20)) ||
+			/* GZIP */ (method === 0x1F && flag === 0x8B);
 
 		// single chunk inflate
 		const inflater = new Inflater(options);
