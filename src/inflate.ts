@@ -76,6 +76,12 @@ const enum GFlags {
 	FCOMMENT = 0x10,
 }
 
+export const enum ContainerFormat {
+	Raw,
+	Deflate,
+	GZip
+}
+
 export class Inflate {
 	private mode: Mode; // current inflate mode
 	private isGZip = false; // are we dealing with a gzip stream?
@@ -115,6 +121,10 @@ export class Inflate {
 
 	get fullSize() {
 		return this.inflatedSize;
+	}
+
+	get containerFormat() {
+		return (this.isGZip) ? ContainerFormat.GZip : ((this.method === 0) ? ContainerFormat.Raw : ContainerFormat.Deflate);
 	}
 
 	inflate(z: ZStream) {
