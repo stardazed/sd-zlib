@@ -5,7 +5,7 @@
  * https://github.com/stardazed/sd-gzip
  */
 
-import { ZStatus } from "./common";
+import { ZStatus, u8ArrayFromBufferSource } from "./common";
 import { ZStream, OUTPUT_BUFSIZE } from "./zstream";
 import { Inflate } from "./inflate";
 
@@ -32,15 +32,16 @@ export interface InflaterOptions {
 	 * If used, the Adler32 checksum of the dictionary is verified
 	 * against the checksum stored in the deflated data.
 	 * If {{dataIncludesHeader}} is false, then this is ignored.
+	 * If the data is in gzip format, then this is ignored
 	 * @default undefined
 	 */
-	presetDictionary?: Uint8Array;
+	presetDictionary?: BufferSource;
 }
 
 export class Inflater {
 	private inflate: Inflate;
 	private z: ZStream;
-	private customDict: Uint8Array | undefined;
+	private customDict: BufferSource | undefined;
 	private allowPartialData: boolean;
 	private buffers: Uint8Array[];
 
@@ -62,11 +63,12 @@ export class Inflater {
 	/**
 	 * Add more data to be decompressed. Call this as many times as
 	 * needed as deflated data becomes available.
-	 * @param chunk a Uint8Array containing compressed data
+	 * @param data a buffer or bufferview containing compressed data
 	 */
-	append(chunk: Uint8Array) {
+	append(data: BufferSource) {
+		const chunk = u8ArrayFromBufferSource(data);
 		if (! (chunk instanceof Uint8Array)) {
-			throw new TypeError("data must be a Uint8Array");
+			throw new TypeError("data must be a buffer or buffer view");
 		}
 		if (chunk.length === 0) {
 			return;
@@ -163,30 +165,31 @@ export class Inflater {
  * a simple, Promise-based way to inflate data. It detects any headers
  * and will act appropriately. Unless you need more control over the
  * inflate process, it is recommended to use this function.
- * @param data the deflated data
- * @param presetDict optional preset deflate dictionary
+ * @param data a buffer or buffer view on the deflated data
+ * @param presetDictionary optional preset DEFLATE dictionary
  * @returns a promise to the re-inflated data
  */
-export function inflate(data: Uint8Array, presetDict?: Uint8Array) {
+export function inflate(data: BufferSource, presetDictionary?: BufferSource) {
 	return new Promise<Uint8Array>(resolve => {
-		if (! (data instanceof Uint8Array)) {
-			throw new TypeError("data must be a Uint8Array");
+		const input = u8ArrayFromBufferSource(data);
+		if (! (input instanceof Uint8Array)) {
+			throw new TypeError("data must be a buffer or buffer view");
 		}
-		if (data.length < 2) {
+		if (input.length < 2) {
 			throw new TypeError("data buffer is invalid");
 		}
 
 		const options: InflaterOptions = {
-			presetDictionary: presetDict
+			presetDictionary
 		};
 
 		// check for a deflate header
-		const [method, flag] = data;
 		options.dataIncludesHeader = (method === 0x78 && (flag === 1 || flag === 0x20));
+		const [method, flag] = input;
 
 		// single chunk inflate
 		const inflater = new Inflater(options);
-		inflater.append(data);
+		inflater.append(input);
 		resolve(inflater.finish());
 	});
 }

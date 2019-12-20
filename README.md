@@ -1,6 +1,6 @@
 @stardazed/gzip
-==============
-Decompresses data compressed with zlib, currently only decompression of `deflate` buffers.
+===============
+Decompresses data compressed with zlib, in both deflate and gzip format.
 Supports optional DEFLATE headers and preset dictionaries.
 
 Installation
@@ -13,16 +13,12 @@ yarn add @stardazed/gzip
 
 Usage
 -----
-In most cases, just call `inflate` on deflated data and you're done. This call
-will correctly interpret and handle a DEFLATE header if it is present.
-
-⚠️ **Important**: Gzip headers are not currently supported, you must provide
-the buffer without any gzip headers.
+In most cases, just call `inflate` on deflated data and you're done.
 
 ```js
 import { inflate } from "@stardazed/gzip";
 
-const deflatedData = /* must be a Uint8Array */;
+const deflatedData = /* An ArrayBuffer or a buffer view (e.g. Uint8Array) */;
 inflate(deflatedData).then(
 	data => /* act on inflated buffer */,
 	error => /* the data was incomplete or invalid */
@@ -57,7 +53,7 @@ import { Inflater } from "@stardazed/gzip";
 const inflater = new Inflater(options /* see above */);
 
 // then, each time a new chunk of data becomes available:
-inflater.append(compressedData) // compressedData must be an Uint8Array
+inflater.append(compressedData) // ArrayBuffer or buffer view
 	.then(buffers => {
 		// buffers is an array of 0 or more Uint8Array buffers
 	})

@@ -48,7 +48,7 @@ export interface InflaterOptions {
 	 * If {{dataIncludesHeader}} is false, then this is ignored.
 	 * @default undefined
 	 */
-	presetDictionary?: Uint8Array;
+	presetDictionary?: BufferSource;
 }
 
 export class Inflater {
@@ -60,7 +60,7 @@ export class Inflater {
 	 * @param data A Uint8 view of the compressed data.
 	 * @throws {Error} Will throw in case of bad data
 	 */
-	append(data: Uint8Array): void;
+	append(data: BufferSource): void;
 
 	/**
 	 * Complete the inflate action and return the resulting
@@ -80,4 +80,4 @@ export class Inflater {
  * @param presetDict Optional preset deflate dictionary
  * @returns A promise to the re-inflated data buffer
  */
-export function inflate(data: Uint8Array, presetDict?: Uint8Array): Promise<Uint8Array>;
+export function inflate(data: BufferSource, presetDict?: Uint8Array): Promise<Uint8Array>;
