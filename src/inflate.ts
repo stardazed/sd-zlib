@@ -102,7 +102,7 @@ export class Inflate {
 	get isComplete() {
 		const { blocks } = this;
 		const blocksComplete = (blocks.mode === 0 || blocks.mode === 8) && blocks.bitb === 0 && blocks.bitk === 0;
-		return (this.mode === Mode.BLOCKS || this.mode === Mode.DONE) && blocksComplete;
+		return this.mode === Mode.DONE && blocksComplete;
 	}
 
 	get fileName() {
