@@ -349,6 +349,12 @@ export class Inflate {
 				}
 				r = f;
 				this.blocks.reset();
+
+				// if no headers were parsed then also skip any potential trailers
+				if (this.method === 0) {
+					this.mode = Mode.DONE;
+					break;
+				}
 				this.mode = Mode.CHKSUM0;
 				/* falls through */
 
