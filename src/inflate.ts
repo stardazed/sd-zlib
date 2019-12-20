@@ -93,10 +93,10 @@ export class Inflate {
 
 	private blocks: InfBlocks; // current inflate_blocks state
 
-	constructor(parseHeader: boolean) {
+	constructor(blocksOnly: boolean) {
 		this.wbits = ZLimits.MAX_BITS;
 		this.blocks = new InfBlocks(1 << this.wbits);
-		this.mode = parseHeader ? Mode.DETECT : Mode.BLOCKS;
+		this.mode = blocksOnly ? Mode.BLOCKS : Mode.DETECT;
 	}
 
 	get isComplete() {
