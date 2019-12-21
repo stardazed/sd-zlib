@@ -8,17 +8,10 @@
  * Based on zlib (c) 1995-2017 Jean-loup Gailly and Mark Adler
  */
 
-import { ZLimits, ZStatus, u8ArrayFromBufferSource } from "./common";
+import { ZLimits, ZStatus, u8ArrayFromBufferSource, PRESET_DICT, Z_DEFLATED, GZIP_ID1, GZIP_ID2 } from "./common";
 import { ZStream } from "./zstream";
 import { InfBlocks } from "./infblocks";
 import { adler32 } from "./adler32";
-
-// preset dictionary flag in zlib header
-const PRESET_DICT = 0x20;
-const Z_DEFLATED = 8;
-
-const GZIP_ID1 = 0x1F;
-const GZIP_ID2 = 0x8B;
 
 const enum Mode {
 	// shared / gzip

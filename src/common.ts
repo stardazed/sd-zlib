@@ -41,6 +41,14 @@ export const enum ZLimits {
 	MANY = 1400
 }
 
+// preset dictionary flag in zlib header
+export const PRESET_DICT = 0x20;
+export const Z_DEFLATED = 8;
+
+export const GZIP_ID1 = 0x1F;
+export const GZIP_ID2 = 0x8B;
+
+
 export const inflate_mask = [
 	0x00000000, 0x00000001, 0x00000003, 0x00000007,
 	0x0000000f, 0x0000001f, 0x0000003f, 0x0000007f,

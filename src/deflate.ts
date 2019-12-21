@@ -27,9 +27,6 @@ const enum BState {
 	FinishDone = 3
 }
 
-// preset dictionary flag in zlib header
-const PRESET_DICT = 0x20;
-
 const END_BLOCK = 256;
 
 // repeat previous bit length 3-6 times (2 bits of repeat count)
