@@ -344,11 +344,6 @@ export class Deflate implements ZDeflateHeap, ZPendingBuffer {
 		this.pending_buf[this.pending++] = (w >>> 8) & 0xff;
 	}
 
-	private putShortMSB(w: number) {
-		this.pending_buf[this.pending++] = (w >>> 8) & 0xff;
-		this.pending_buf[this.pending++] = w & 0xff;
-	}
-
 	private send_bits(value: number, length: number) {
 		if (this.bi_valid > 16 - length) {
 			// bi_buf |= (val << bi_valid);
@@ -1178,18 +1173,8 @@ export class Deflate implements ZDeflateHeap, ZPendingBuffer {
 		let old_flush = this.last_flush;
 		this.last_flush = flush;
 
-		// Write the zlib header
-			let header = (0x08 + ((w_bits - 8) << 4)) << 8;
-			let level_flags = ((this.level - 1) & 0xff) >> 1;
-
-			if (level_flags > 3)
-				level_flags = 3;
-			header |= (level_flags << 6);
-			if (this.strstart !== 0)
-				header |= PRESET_DICT;
-			header += 31 - (header % 31);
-
-			this.putShortMSB(header);
+		// this status transition is only marked to prevent setting the
+		// preset dictionary after compression has started
 		if (this.status === DeflateState.INIT) {
 			this.status = DeflateState.BUSY;
 		}

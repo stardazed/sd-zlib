@@ -77,7 +77,7 @@ export class Inflater {
 	append(data: BufferSource): Uint8Array[] {
 		const chunk = u8ArrayFromBufferSource(data);
 		if (! (chunk instanceof Uint8Array)) {
-			throw new TypeError("data must be a buffer or buffer view");
+			throw new TypeError("data must be an ArrayBuffer or buffer view");
 		}
 		if (chunk.length === 0) {
 			return [];
