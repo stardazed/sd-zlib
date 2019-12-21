@@ -22,6 +22,19 @@ export const enum ZStatus {
 	BUF_ERROR = -5,
 }
 
+export const enum ZFlush {
+	NO_FLUSH = 0,
+	PARTIAL_FLUSH = 1,
+	FULL_FLUSH = 3,
+	FINISH = 4
+}
+
+export const enum ZStrategy {
+	DEFAULT_STRATEGY = 0,
+	FILTERED = 1,
+	HUFFMAN_ONLY = 2
+}
+
 export const enum ZLimits {
 	MIN_BITS = 8,
 	MAX_BITS = 15,
@@ -50,6 +63,19 @@ export interface ZBuffer {
 	write: number; // window write pointer
 
 	inflate_flush(z: ZStream, r: ZStatus): ZStatus;
+}
+
+export interface ZDeflateHeap {
+	heap: number[];
+	heap_len: number;
+	heap_max: number;
+	opt_len: number;
+	static_len: number;
+
+	depth: number[];
+	bl_count: number[];
+
+	pqdownheap(tree: number[], k: number): void;
 }
 
 /**
