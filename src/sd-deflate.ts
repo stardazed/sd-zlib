@@ -35,7 +35,7 @@ export interface DeflaterOptions {
 	 * must not be set or you will get an exception.
 	 * @default undefined
 	 */
-	deflateDictionary?: BufferSource;
+	dictionary?: BufferSource;
 }
 
 export class Deflater {
@@ -49,7 +49,7 @@ export class Deflater {
 	constructor(options?: DeflaterOptions) {
 		const level = options?.level ?? 6;
 		const format = options?.format ?? "deflate";
-		const dictionary = options?.deflateDictionary;
+		const dictionary = options?.dictionary;
 
 		if (typeof level !== "number" || level < 0 || level > 9) {
 			throw new RangeError("level must be between 0 and 9, inclusive");
@@ -67,7 +67,7 @@ export class Deflater {
 			}
 			const dict = u8ArrayFromBufferSource(dictionary);
 			if (! dict) {
-				throw new TypeError("presetDictionary must be an ArrayBuffer or buffer view");
+				throw new TypeError("dictionary must be an ArrayBuffer or buffer view");
 			}
 			this.dictChecksum = adler32(dict);
 			this.deflate.deflateSetDictionary(dict);
