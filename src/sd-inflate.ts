@@ -205,7 +205,7 @@ export function inflate(data: BufferSource, deflateDictionary?: BufferSource) {
 		// check for a deflate or gzip header
 		const [method, flag] = input;
 		const startsWithIdent =
-			/* DEFLATE */ (method === 0x78 && (flag === 1 || flag === 0x20)) ||
+			/* DEFLATE */ (method === 0x78 && ((((method << 8) + flag) % 31) === 0)) ||
 			/* GZIP */ (method === 0x1F && flag === 0x8B);
 		options.noHeadersOrTrailers = !startsWithIdent;
 
