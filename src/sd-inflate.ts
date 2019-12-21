@@ -19,7 +19,7 @@ export interface InflaterOptions {
 	 * set, no validity checking on the resulting data.
 	 * @default false
 	 */
-	noHeadersOrTrailers?: boolean;
+	raw?: boolean;
 
 	/**
 	 * Provide an optional precalculated lookup dictionary.
@@ -30,13 +30,13 @@ export interface InflaterOptions {
 	 * If the data is in gzip format, then this is ignored
 	 * @default undefined
 	 */
-	deflateDictionary?: BufferSource;
+	dictionary?: BufferSource;
 }
 
 export interface InflateResult {
 	success: boolean;
 	complete: boolean;
-	checkSum: "match" | "mismatch" | "unchecked";
+	checksum: "match" | "mismatch" | "unchecked";
 	fileSize: "match" | "mismatch" | "unchecked";
 	fileName: string;
 }
@@ -48,25 +48,25 @@ export class Inflater {
 	private checksum: number | undefined;
 
 	constructor(options?: InflaterOptions) {
-		options = options || {};
-		if (options.noHeadersOrTrailers !== undefined && options.noHeadersOrTrailers !== true && options.noHeadersOrTrailers !== false)  {
-			throw new TypeError("options.noHeadersOrTrailers must be undefined or true or false");
+		const raw = options?.raw;
+		if (raw !== undefined && raw !== true && raw !== false)  {
+			throw new TypeError("options.raw must be undefined or true or false");
 		}
-		const blocksOnly = options.noHeadersOrTrailers === undefined ? false : options.noHeadersOrTrailers;
+		const blocksOnly = raw === undefined ? false : raw;
 
-		if (options.deflateDictionary !== undefined) {
+		const dictionary = options?.dictionary;
+		if (dictionary !== undefined) {
 			if (blocksOnly) {
-				throw new RangeError("options.presetDictionary cannot be set when options.noHeadersOrTrailers is true");
+				throw new RangeError("options.dictionary cannot be set when options.raw is true");
 			}
-			if (u8ArrayFromBufferSource(options.deflateDictionary) === undefined) {
-				throw new TypeError("options.presetDictionary must be undefined or a buffer or a buffer view");
+			if (u8ArrayFromBufferSource(dictionary) === undefined) {
+				throw new TypeError("options.dictionary must be undefined or a buffer or a buffer view");
 			}
-			this.customDict = options.deflateDictionary;
+			this.customDict = dictionary;
 		}
 
 		this.inflate = new Inflate(blocksOnly);
 		this.z = new ZStream();
-		this.customDict = options.deflateDictionary;
 	}
 
 	/**
@@ -151,16 +151,16 @@ export class Inflater {
 		const storedSize = this.inflate.fullSize;
 		const complete = this.inflate.isComplete;
 
-		const checkSum = (storedChecksum === 0) ? "unchecked" : (storedChecksum === this.checksum ? "match" : "mismatch");
+		const checksum = (storedChecksum === 0) ? "unchecked" : (storedChecksum === this.checksum ? "match" : "mismatch");
 		const fileSize = (storedSize === 0) ? "unchecked" : (storedSize === this.z.total_out ? "match" : "mismatch");
-		const success = complete && checkSum !== "mismatch" && fileSize !== "mismatch";
+		const success = complete && checksum !== "mismatch" && fileSize !== "mismatch";
 
 		const fileName = this.inflate.fileName;
 
 		return {
 			success,
 			complete,
-			checkSum,
+			checksum,
 			fileSize,
 			fileName
 		};
@@ -199,7 +199,7 @@ export function inflate(data: BufferSource, deflateDictionary?: BufferSource) {
 		}
 
 		const options: InflaterOptions = {
-			deflateDictionary
+			dictionary: deflateDictionary
 		};
 
 		// check for a deflate or gzip header
@@ -207,7 +207,7 @@ export function inflate(data: BufferSource, deflateDictionary?: BufferSource) {
 		const startsWithIdent =
 			/* DEFLATE */ (method === 0x78 && ((((method << 8) + flag) % 31) === 0)) ||
 			/* GZIP */ (method === 0x1F && flag === 0x8B);
-		options.noHeadersOrTrailers = !startsWithIdent;
+		options.raw = !startsWithIdent;
 
 		// single chunk inflate
 		const inflater = new Inflater(options);
@@ -218,7 +218,7 @@ export function inflate(data: BufferSource, deflateDictionary?: BufferSource) {
 			if (! result.complete) {
 				return reject("Unexpected EOF during decompression");
 			}
-			if (result.checkSum === "mismatch") {
+			if (result.checksum === "mismatch") {
 				return reject("Data integrity check failed");
 			}
 			if (result.fileSize === "mismatch") {
