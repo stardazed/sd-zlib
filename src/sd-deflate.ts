@@ -19,7 +19,7 @@ export interface DeflaterOptions {
 	 * (file headers, crc checksum and size check)
 	 * @default "deflate"
 	 */
-	container?: "raw" | "deflate" | "gzip";
+	format?: "raw" | "deflate" | "gzip";
 
 	/**
 	 * Deflate compression level (0 through 9).
@@ -44,17 +44,17 @@ export class Deflater {
 	private checksum = 1; // initial seed for adler32
 	private origSize = 0; // size in bytes of source data
 	private dictChecksum = 0;
-	private container: "raw" | "deflate" | "gzip";
+	private format: "raw" | "deflate" | "gzip";
 
 	constructor(options?: DeflaterOptions) {
 		const level = options?.level ?? 6;
-		const container = options?.container ?? "deflate";
+		const format = options?.format ?? "deflate";
 		const dictionary = options?.deflateDictionary;
 
 		if (typeof level !== "number" || level < 0 || level > 9) {
 			throw new RangeError("level must be between 0 and 9, inclusive");
 		}
-		if (container !== "gzip" && container !== "raw" && container !== "deflate") {
+		if (format !== "gzip" && format !== "raw" && format !== "deflate") {
 			throw new RangeError("container must be one of `raw`, `deflate`, `gzip`");
 		}
 
@@ -62,7 +62,7 @@ export class Deflater {
 		this.deflate = new Deflate(this.z, level, ZStrategy.DEFAULT_STRATEGY);
 
 		if (dictionary) {
-			if (container !== "deflate") {
+			if (format !== "deflate") {
 				throw new TypeError("Can only provide a dictionary for `deflate` containers.");
 			}
 			const dict = u8ArrayFromBufferSource(dictionary);
@@ -73,8 +73,8 @@ export class Deflater {
 			this.deflate.deflateSetDictionary(dict);
 		}
 
-		this.container = container;
-		if (this.container === "gzip") {
+		this.format = format;
+		if (this.format === "gzip") {
 			this.checksum = 0; // crc32 uses 0 for initial seed
 		}
 	}
@@ -115,7 +115,7 @@ export class Deflater {
 	}
 
 	private buildTrailer() {
-		const gzip = this.container === "gzip";
+		const gzip = this.format === "gzip";
 		const size = gzip ? 8 : 4;
 		const trailer = new ArrayBuffer(size);
 		const dv = new DataView(trailer);
@@ -139,7 +139,7 @@ export class Deflater {
 		}
 
 		// update checksum and total size
-		if (this.container !== "gzip") {
+		if (this.format !== "gzip") {
 			this.checksum = adler32(chunk, this.checksum);
 		}
 		else {
@@ -154,10 +154,10 @@ export class Deflater {
 
 		// return any headers first
 		if (deflate.status === DeflateState.INIT) {
-			if (this.container === "deflate") {
+			if (this.format === "deflate") {
 				buffers.push(this.buildZlibHeader());
 			}
-			else if (this.container === "gzip") {
+			else if (this.format === "gzip") {
 				buffers.push(this.buildGZipHeader());
 			}
 		}
@@ -193,7 +193,7 @@ export class Deflater {
 			}
 		} while (z.avail_in > 0 || z.avail_out === 0);
 
-		if (this.container !== "raw") {
+		if (this.format !== "raw") {
 			buffers.push(this.buildTrailer());
 		}
 
