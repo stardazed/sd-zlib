@@ -36,9 +36,11 @@ const REPZ_3_10 = 17;
 // repeat a zero length 11-138 times (7 bits of repeat count)
 const REPZ_11_138 = 18;
 
-const INIT_STATE = 42;
-const BUSY_STATE = 113;
-const FINISH_STATE = 666;
+export const enum DeflateState {
+	INIT = 1,
+	BUSY = 2,
+	FINISH = 3
+}
 
 const STORED_BLOCK = 0;
 const STATIC_TREES = 1;
@@ -94,7 +96,7 @@ const window_size = 2 * w_size;
 
 export class Deflate implements ZDeflateHeap, ZPendingBuffer {
 	strm: ZStream;
-	status = INIT_STATE;
+	status = DeflateState.INIT;
 
 	pending_buf = new Uint8Array(pending_buf_size); // output still pending
 	pending = 0; // nb of bytes in the pending buffer
@@ -1129,7 +1131,7 @@ export class Deflate implements ZDeflateHeap, ZPendingBuffer {
 		let length = dictLength;
 		let n, index = 0;
 
-		if (!dictionary || this.status !== INIT_STATE)
+		if (!dictionary || this.status !== DeflateState.INIT)
 			return ZStatus.STREAM_ERROR;
 
 		if (length < MIN_MATCH)
@@ -1164,7 +1166,7 @@ export class Deflate implements ZDeflateHeap, ZPendingBuffer {
 		}
 		const { strm } = this;
 
-		if (!strm.next_out || (!strm.next_in && strm.avail_in !== 0) || (this.status === FINISH_STATE && flush != ZFlush.FINISH)) {
+		if (!strm.next_out || (!strm.next_in && strm.avail_in !== 0) || (this.status === DeflateState.FINISH && flush != ZFlush.FINISH)) {
 			// _strm.msg = z_errmsg[Z_NEED_DICT - (Z_STREAM_ERROR)];
 			return ZStatus.STREAM_ERROR;
 		}
@@ -1177,7 +1179,6 @@ export class Deflate implements ZDeflateHeap, ZPendingBuffer {
 		this.last_flush = flush;
 
 		// Write the zlib header
-		if (this.status === INIT_STATE) {
 			let header = (0x08 + ((w_bits - 8) << 4)) << 8;
 			let level_flags = ((this.level - 1) & 0xff) >> 1;
 
@@ -1188,8 +1189,9 @@ export class Deflate implements ZDeflateHeap, ZPendingBuffer {
 				header |= PRESET_DICT;
 			header += 31 - (header % 31);
 
-			this.status = BUSY_STATE;
 			this.putShortMSB(header);
+		if (this.status === DeflateState.INIT) {
+			this.status = DeflateState.BUSY;
 		}
 
 		// Flush as much pending output as possible
@@ -1216,13 +1218,13 @@ export class Deflate implements ZDeflateHeap, ZPendingBuffer {
 		}
 
 		// User must not provide more input after the first FINISH:
-		if (this.status === FINISH_STATE && strm.avail_in !== 0) {
+		if (this.status === DeflateState.FINISH && strm.avail_in !== 0) {
 			// _strm.msg = z_errmsg[Z_NEED_DICT - (Z_BUF_ERROR)];
 			return ZStatus.BUF_ERROR;
 		}
 
 		// Start a new block or continue the current one.
-		if (strm.avail_in !== 0 || this.lookahead !== 0 || (flush !== ZFlush.NO_FLUSH && this.status !== FINISH_STATE)) {
+		if (strm.avail_in !== 0 || this.lookahead !== 0 || (flush !== ZFlush.NO_FLUSH && this.status !== DeflateState.FINISH)) {
 			let bstate: BState;
 			switch (config_table[this.level].func) {
 				case ZFunc.STORED:
@@ -1238,7 +1240,7 @@ export class Deflate implements ZDeflateHeap, ZPendingBuffer {
 			}
 
 			if (bstate == BState.FinishStarted || bstate === BState.FinishDone) {
-				this.status = FINISH_STATE;
+				this.status = DeflateState.FINISH;
 			}
 			if (bstate === BState.NeedMore || bstate === BState.FinishStarted) {
 				if (strm.avail_out === 0) {
