@@ -6,6 +6,8 @@
 	<script src="../dist/sd-gzip.umd.js"></script>
 </head>
 <body>
+<h1>sd-gzip tests</h1>
+<p>See console for results</p>
 <script type="module">
 // @ts-check
 /**
@@ -24,7 +26,7 @@
  */
 
 // @ts-ignore
-const { Inflater, inflate, adler32, crc32, mergeBuffers } = sdGZip;
+const { Deflater, Inflater, inflate, adler32, crc32, mergeBuffers } = sdGZip;
 
 function testInflateParts(fileName) {
 	return Promise.all([fetch(`./${fileName}.part1.deflate`), fetch(`./${fileName}.part2.deflate`), fetch(`./${fileName}.txt`)])
@@ -136,6 +138,39 @@ function testInflateBinary(fileName) {
 		});
 }
 
+// -------------------
+
+function testRoundTripText(fileName) {
+	return Promise.all([fetch(`./${fileName}.txt`)])
+		.then(([rT]) => Promise.all([rT.arrayBuffer()]))
+		.then(async ([ab]) => {
+			// compress data
+			const deflater = new Deflater({ level: 6 });
+			const t0 = performance.now();
+			const buffers = deflater.append(new Uint8Array(ab));
+			const more = deflater.finish();
+			const time = Math.round(performance.now() - t0);
+
+			const deflated = mergeBuffers(buffers.concat(more));
+			console.info(`Comp size = ${deflated.byteLength}, time = ${time}`);
+
+			const textB = await inflate(deflated);
+			const text = (new TextDecoder()).decode(textB);
+			const original = (new TextDecoder()).decode(ab);
+
+			// report success
+			const success = original === text;
+			console.info("TEST (C-text) done", fileName, success);
+			return success;
+		})
+		.catch(err => {
+			console.warn("Error during test (C-text)", fileName, err);
+			return false;
+		});
+}
+
+// -------------------
+
 function runTests() {
 	Promise.all([
 		testInflateText("simple"),
@@ -144,7 +179,10 @@ function runTests() {
 		testInflateText("paradiselost"),
 		testInflateParts("paradiselost"),
 		testInflateTextGzip("paradiselost"),
-		testInflateBinary("vertices")
+		testInflateBinary("vertices"),
+
+		testRoundTripText("simple"),
+		testRoundTripText("paradiselost")
 	])
 	.then(results => {
 		console.info("DONE");
