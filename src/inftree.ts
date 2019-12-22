@@ -1,12 +1,12 @@
-/**
- * zlib/inftree - huffman encoding trees
- * Part of Stardazed
- * (c) 2018-Present by Arthur Langereis - @zenmumbler
- * https://github.com/stardazed/sd-zlib
- *
- * Based on zip.js (c) 2013 by Gildas Lormeau
- * Based on zlib (c) 1995-2017 Jean-loup Gailly and Mark Adler
- */
+/*
+zlib/inftree - huffman encoding trees
+Part of Stardazed
+(c) 2018-Present by Arthur Langereis - @zenmumbler
+https://github.com/stardazed/sd-zlib
+
+Based on zip.js (c) 2013 by Gildas Lormeau
+Based on zlib (c) 1995-Present Jean-loup Gailly and Mark Adler
+*/
 
 // tslint:disable:variable-name
 

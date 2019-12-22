@@ -1,11 +1,11 @@
-/**
- * zlib/adler32 -- compute the Adler-32 checksum of a data stream
- * Part of Stardazed
- * (c) 2018-Present by Arthur Langereis - @zenmumbler
- * (c) 1995-2011, 2016 Mark Adler
- * from adler32.c, which can be found at:
- * https://github.com/madler/zlib/blob/master/adler32.c
- */
+/*
+zlib/adler32 -- compute the Adler-32 checksum of a data stream
+Part of Stardazed
+(c) 2018-Present by Arthur Langereis - @zenmumbler
+(c) 1995-2011, 2016 Mark Adler
+from adler32.c, which can be found at:
+https://github.com/madler/zlib/blob/master/adler32.c
+*/
 
 import { u8ArrayFromBufferSource } from "./common";
 

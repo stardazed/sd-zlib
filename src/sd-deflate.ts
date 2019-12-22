@@ -1,12 +1,12 @@
-/**
- * zlib/sd-deflate - deflate external API
- * Part of Stardazed
- * (c) 2018-Present by Arthur Langereis - @zenmumbler
- * https://github.com/stardazed/sd-zlib
- *
- * Based on zip.js (c) 2013 by Gildas Lormeau
- * Based on zlib (c) 1995-2017 Jean-loup Gailly and Mark Adler
- */
+/*
+zlib/sd-deflate - deflate external API
+Part of Stardazed
+(c) 2018-Present by Arthur Langereis - @zenmumbler
+https://github.com/stardazed/sd-zlib
+
+Based on zip.js (c) 2013 by Gildas Lormeau
+Based on zlib (c) 1995-Present Jean-loup Gailly and Mark Adler
+*/
 
 import { ZStatus, ZFlush, ZStrategy, PRESET_DICT, GZIP_ID1, GZIP_ID2, Z_DEFLATED, u8ArrayFromBufferSource, mergeBuffers } from "./common";
 import { ZStream, OUTPUT_BUFSIZE } from "./zstream";
