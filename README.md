@@ -53,8 +53,8 @@ Set to `true` if you only have the compressed data, mostly for advanced
 embedding use cases.
 
 `dictionary`: BufferSource (default: `undefined`)<br>
-Provide an optional precalculated lookup dictionary for zlib container
-files that were compressed with the same dictionary. (advanced use case)
+Provide an optional precalculated lookup dictionary for deflate format
+sources that were compressed with the same dictionary. (advanced use case)
 
 ```js
 import { Inflater, mergeBuffers } from "@stardazed/zlib";

@@ -1,58 +1,46 @@
-/**
- * @stardazed/zlib - Zlib library implementation
- * Part of Stardazed
- * (c) 2018-Present by Arthur Langereis - @zenmumbler
- * https://github.com/stardazed/sd-zlib
- *
- * Based on zip.js (c) 2013 by Gildas Lormeau
- * Based on zlib (c) 1995-2017 Jean-loup Gailly and Mark Adler
- */
+/*
+@stardazed/zlib - Zlib library implementation
+Part of Stardazed
+(c) 2018-Present by Arthur Langereis - @zenmumbler
+https://github.com/stardazed/sd-zlib
 
-/**
-* Compute the Adler-32 checksum of a buffer source
-* @param data Source data, a BufferSource
-* @param seed Optional seed for the checksum
+Based on zip.js (c) 2013 by Gildas Lormeau
+Based on zlib (c) 1995-2017 Jean-loup Gailly and Mark Adler
 */
-export declare function adler32(source: BufferSource, seed?: number): number;
-
-/**
- * Compute the CRC-32 checksum of a buffer source
- * @param source Source data, a BufferSource
- * @param seed Optional seed for the checksum
- */
-export function crc32(source: BufferSource, seed?: number): number;
 
 export interface InflaterOptions {
 	/**
-	 * If set, headers and trailers will be assumed to be missing.
-	 * Set to true if you only have the raw compressed data.
-	 * Since checksums and other metadata is unavaiable when this is
-	 * set, no validity checking on the resulting data.
+	 * Set to `true` if you only have the compressed data,
+	 * mostly for advanced embedding use cases.
 	 * @default false
 	 */
-	noHeadersOrTrailers?: boolean;
+	raw?: boolean;
 
 	/**
-	 * Provide an optional precalculated lookup dictionary.
-	 * Only used if the data indicates it needs an external dictionary.
-	 * If used, the Adler32 checksum of the dictionary is verified
-	 * against the checksum stored in the deflated data.
-	 * If {{dataIncludesHeader}} is false, then this is ignored.
-	 * If the data is in gzip format, then this is ignored
+	 * Provide an optional precalculated lookup dictionary for
+	 * deflate format sources that were compressed with the same
+	 * dictionary. (advanced use case)
 	 * @default undefined
 	 */
-	deflateDictionary?: BufferSource;
+	dictionary?: BufferSource;
 }
 
 export interface InflateResult {
+	/** overall indicator of proper decompression */
 	success: boolean;
+	/** was the input data complete? */
 	complete: boolean;
+	/** data validity check result */
 	checkSum: "match" | "mismatch" | "unchecked";
+	/** dats size check result (gzip only) */
 	fileSize: "match" | "mismatch" | "unchecked";
+	/** stored original file name (gzip only, "" otherwise) */
 	fileName: string;
+	/** stored modifcation date (gzip only) */
+	modDate: Date | undefined;
 }
 
-export class Inflater {
+export declare class Inflater {
 	constructor(options?: InflaterOptions);
 
 	/**
@@ -70,14 +58,92 @@ export class Inflater {
 }
 
 /**
- * inflate does the right thing for almost all situations and provides
- * a simple, Promise-based way to inflate data. It detects any headers
- * and will act appropriately. Unless you need more control over the
- * inflate process, it is recommended to use this function.
+ * inflate provides a simple way to inflate (decompress) data.
+ * It auto-detects the data format and will act appropriately.
  * @param data a buffer or buffer view on the deflated data
- * @param deflateDictionary optional preset DEFLATE dictionary
- * @returns a promise to the re-inflated data
+ * @param dictionary optional preset DEFLATE dictionary
+ * @returns the decompressed data
  */
-export function inflate(data: BufferSource, deflateDictionary?: BufferSource);
+export function inflate(data: BufferSource, dictionary?: BufferSource): Uint8Array;
 
-export function mergeBuffers(buffers: Uint8Array[]);
+export interface DeflaterOptions {
+	/**
+	 * Specify what headers and footers should be written
+	 * to the ouput file. One of `raw` (no headers, just data)
+	 * `deflate` (2-byte header, adler checksum) or `gzip`
+	 * (file headers, crc checksum and size check)
+	 * @default "deflate"
+	 */
+	format?: "raw" | "deflate" | "gzip";
+
+	/**
+	 * Deflate compression level (1 through 9).
+	 * Higher level generally means better compression but
+	 * also longer execution time.
+	 * @default 6
+	 */
+	level?: number;
+
+	/**
+	 * Provide an optional precalculated lookup dictionary.
+	 * If the container is not set to `deflate` format, then this
+	 * must not be set or you will get an exception.
+	 * @default undefined
+	 */
+	dictionary?: BufferSource;
+
+	/**
+	 * Provide an optional file name for the data being compressed.
+	 * Only affects output if format is set to `gzip`.
+	 * @default undefined
+	 */
+	fileName?: string;
+}
+
+export declare class Deflater {
+	constructor(options?: DeflaterOptions);
+
+	/**
+	 * Add more data to be compressed. Call this as many times as
+	 * needed to add more data the the ouptut.
+	 * @param data a buffer or bufferview
+	 * @returns an array of zero or more Uint8Arrays of compressed data
+	 */
+	append(data: BufferSource): Uint8Array[];
+
+	/**
+	 * Signal that you have added all the data to be compressed.
+	 * @param data a buffer or bufferview
+	 * @returns an array of zero or more Uint8Arrays of compressed data
+	 */
+	finish(): Uint8Array[];
+}
+
+/**
+ * deflate provides a simple way to deflate (compress) data.
+ * Use this function if you have a single buffer that needs to be compressed.
+ * @param data a buffer or buffer view on the data to be compressed
+ * @param options optionally provide compression settings and file metadata
+ * @returns the compressed data
+ */
+export function deflate(data: BufferSource, options?: DeflaterOptions): Uint8Array;
+
+/**
+ * Append an array of buffers together into one single buffer.
+ */
+export function mergeBuffers(buffers: Uint8Array[]): Uint8Array;
+
+/**
+* Compute the Adler-32 checksum of a buffer source
+* @param data Source data, a BufferSource
+* @param seed Optional seed for the checksum
+*/
+export declare function adler32(source: BufferSource, seed?: number): number;
+
+/**
+ * Compute the CRC-32 checksum of a buffer source
+ * @param source Source data, a BufferSource
+ * @param seed Optional seed for the checksum
+ */
+export function crc32(source: BufferSource, seed?: number): number;
+

@@ -19,7 +19,7 @@ export interface InflaterOptions {
 	 * If set, headers and trailers will be assumed to be missing.
 	 * Set to true if you only have the raw compressed data.
 	 * Since checksums and other metadata is unavaiable when this is
-	 * set, no validity checking on the resulting data.
+	 * set, no validity checking is done on the resulting data.
 	 * @default false
 	 */
 	raw?: boolean;

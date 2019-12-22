@@ -43,6 +43,7 @@ export interface DeflaterOptions {
 	/**
 	 * Provide an optional file name for the data being compressed.
 	 * Only affects output if format is set to `gzip`.
+	 * @default undefined
 	 */
 	fileName?: string;
 }
@@ -163,6 +164,12 @@ export class Deflater {
 		return new Uint8Array(trailer);
 	}
 
+	/**
+	 * Add more data to be compressed. Call this as many times as
+	 * needed to add more data the the ouptut.
+	 * @param data a buffer or bufferview
+	 * @returns an array of zero or more Uint8Arrays of compressed data
+	 */
 	append(data: BufferSource) {
 		const buffers: Uint8Array[] = [];
 
@@ -213,6 +220,11 @@ export class Deflater {
 		return buffers;
 	}
 
+	/**
+	 * Signal that you have added all the data to be compressed.
+	 * @param data a buffer or bufferview
+	 * @returns an array of zero or more Uint8Arrays of compressed data
+	 */
 	finish() {
 		const buffers: Uint8Array[] = [];
 		const { deflate, z } = this;
@@ -243,9 +255,8 @@ export class Deflater {
 
 /**
  * deflate provides a simple way to deflate (compress) data.
- * Use this function if you have a single buffer that needs to be
- * compressed.
- * @param data a buffer or buffer view on the deflated data
+ * Use this function if you have a single buffer that needs to be compressed.
+ * @param data a buffer or buffer view on the data to be compressed
  * @param options optionally provide compression settings and file metadata
  * @returns the compressed data
  */
