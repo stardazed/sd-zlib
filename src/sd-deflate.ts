@@ -65,7 +65,7 @@ export class Deflater {
 		if (format !== "gzip" && format !== "raw" && format !== "deflate") {
 			throw new RangeError("container must be one of `raw`, `deflate`, `gzip`");
 		}
-		if (typeof fileName !== undefined && typeof fileName !== "string") {
+		if (typeof fileName !== "undefined" && typeof fileName !== "string") {
 			throw new TypeError("fileName must be a string");
 		}
 		this.fileName = fileName || "";
@@ -213,6 +213,10 @@ export class Deflater {
 	finish() {
 		const buffers: Uint8Array[] = [];
 		const { deflate, z } = this;
+
+		if (deflate.status === DeflateState.INIT) {
+			throw new Error("Cannot call finish before at least 1 call to append");
+		}
 
 		do {
 			z.next_out_index = 0;
