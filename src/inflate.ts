@@ -83,6 +83,7 @@ export class Inflate {
 	private method = 0; // if FLAGS, method byte
 	private gflags = 0; // if in gzip mode and after FLAG, then contains gzip flags
 	private name = "";
+	private mtime = 0;
 	private dictChecksum = 0; // expected checksum of external dictionary
 	private fullChecksum = 0; // expected checksum of original data
 	private inflatedSize = 0; // size in bytes of original data
@@ -106,6 +107,13 @@ export class Inflate {
 
 	get fileName() {
 		return this.name;
+	}
+
+	get modDate() {
+		if (this.mtime === 0) {
+			return undefined;
+		}
+		return new Date(this.mtime * 1000);
 	}
 
 	get checksum() {
@@ -269,6 +277,22 @@ export class Inflate {
 			case Mode.MTIME1:
 			case Mode.MTIME2:
 			case Mode.MTIME3:
+				if (z.avail_in === 0) {
+					return r;
+				}
+				r = f;
+
+				z.avail_in--;
+				z.total_in++;
+				b = z.next_in[z.next_in_index++] & 0xff;
+				this.mtime = (this.mtime >>> 8) | (b << 24);
+				if (this.mode !== Mode.MTIME3) {
+					this.mode++;
+					break;
+				}
+				this.mode = Mode.XFLAGS;
+				// fallthrough
+
 			case Mode.XFLAGS:
 			case Mode.OS:
 				// track but skip
