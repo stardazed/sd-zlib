@@ -5,7 +5,7 @@
  * https://github.com/stardazed/sd-gzip
  */
 
-import { ZStatus, ZFlush, ZStrategy, PRESET_DICT, GZIP_ID1, GZIP_ID2, Z_DEFLATED, u8ArrayFromBufferSource } from "./common";
+import { ZStatus, ZFlush, ZStrategy, PRESET_DICT, GZIP_ID1, GZIP_ID2, Z_DEFLATED, u8ArrayFromBufferSource, mergeBuffers } from "./common";
 import { ZStream, OUTPUT_BUFSIZE } from "./zstream";
 import { Deflate, DeflateState } from "./deflate";
 import { adler32 } from "./adler32";
@@ -236,4 +236,27 @@ export class Deflater {
 
 		return buffers;
 	}
+}
+
+/**
+ * deflate provides a simple, Promise-based way to deflate (compress) data.
+ * Use this function if you have just a single buffer that needs to be
+ * compressed.
+ * @param data a buffer or buffer view on the deflated data
+ * @param options optionally provide compression settings and file metadata
+ * @returns a promise to the compressed data
+ */
+export function deflate(data: BufferSource, options?: DeflaterOptions) {
+	return new Promise<Uint8Array>(resolve => {
+		const input = u8ArrayFromBufferSource(data);
+		if (!(input instanceof Uint8Array)) {
+			throw new TypeError("data must be an ArrayBuffer or buffer view");
+		}
+
+		const deflater = new Deflater(options);
+		const buffers = deflater.append(data);
+		buffers.push(...deflater.finish());
+
+		resolve(mergeBuffers(buffers));
+	});
 }
