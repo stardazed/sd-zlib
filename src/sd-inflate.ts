@@ -39,6 +39,7 @@ export interface InflateResult {
 	checksum: "match" | "mismatch" | "unchecked";
 	fileSize: "match" | "mismatch" | "unchecked";
 	fileName: string;
+	modDate: Date | undefined;
 }
 
 export class Inflater {
@@ -156,13 +157,15 @@ export class Inflater {
 		const success = complete && checksum !== "mismatch" && fileSize !== "mismatch";
 
 		const fileName = this.inflate.fileName;
+		const modDate = this.inflate.modDate;
 
 		return {
 			success,
 			complete,
 			checksum,
 			fileSize,
-			fileName
+			fileName,
+			modDate
 		};
 	}
 }
