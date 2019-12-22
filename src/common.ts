@@ -112,3 +112,15 @@ export function u8ArrayFromBufferSource(source: BufferSource): Uint8Array | unde
 
 	return source;
 }
+
+export function mergeBuffers(buffers: Uint8Array[]) {
+	const totalSize = buffers.map(b => b.byteLength).reduce((s, l) => s + l, 0);
+	const output = new Uint8Array(totalSize);
+
+	let offset = 0;
+	for (const buf of buffers) {
+		output.set(buf, offset);
+		offset += buf.length;
+	}
+	return output;
+}
