@@ -25,7 +25,7 @@ export interface DeflaterOptions {
 	format?: "raw" | "deflate" | "gzip";
 
 	/**
-	 * Deflate compression level (0 through 9).
+	 * Deflate compression level (1 through 9).
 	 * Higher level generally means better compression but
 	 * also longer execution time.
 	 * @default 6
@@ -62,8 +62,8 @@ export class Deflater {
 		const dictionary = options?.dictionary;
 		const fileName = options?.fileName;
 
-		if (typeof level !== "number" || level < 0 || level > 9) {
-			throw new RangeError("level must be between 0 and 9, inclusive");
+		if (typeof level !== "number" || level < 1 || level > 9) {
+			throw new RangeError("level must be between 1 and 9, inclusive");
 		}
 		if (format !== "gzip" && format !== "raw" && format !== "deflate") {
 			throw new RangeError("container must be one of `raw`, `deflate`, `gzip`");
