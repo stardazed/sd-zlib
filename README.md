@@ -83,6 +83,9 @@ for broken input streams is not an error, but the details are given
 for you to act upon in whatever manner is suitable. Use the `success`
 field for most use cases.
 
+You cannot reuse an `Inflater` instance, to decompress another source, create
+a new `Inflater` instance.
+
 Compression
 -----------
 In most cases, just call `deflate` on some data and you're done.
@@ -138,6 +141,9 @@ outputs.push(...inflater.finish());
 // use the built-in mergeBuffers utility to merge all outputs together
 const data = mergeBuffers(outputs);
 ```
+
+You cannot reuse a `Deflater` instance, to compress another source, create
+a new `Deflater` instance.
 
 Checksums
 ---------
