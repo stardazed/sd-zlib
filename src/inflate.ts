@@ -84,6 +84,7 @@ export class Inflate {
 	private gflags = 0; // if in gzip mode and after FLAG, then contains gzip flags
 	private name = "";
 	private mtime = 0;
+	private xlen = 0;
 	private dictChecksum = 0; // expected checksum of external dictionary
 	private fullChecksum = 0; // expected checksum of original data
 	private inflatedSize = 0; // size in bytes of original data
@@ -295,6 +296,8 @@ export class Inflate {
 
 			case Mode.XFLAGS:
 			case Mode.OS:
+			case Mode.HCRC0:
+			case Mode.HCRC1:
 				// track but skip
 				if (z.avail_in === 0) {
 					return r;
@@ -329,11 +332,44 @@ export class Inflate {
 
 			case Mode.EXTRA0:
 			case Mode.EXTRA1:
-			case Mode.EXTRA1:
-			case Mode.HCRC0:
-			case Mode.HCRC1:
-				this.mode = Mode.BAD;
-				z.msg = "unsupported field";
+				if (z.avail_in === 0) {
+					return r;
+				}
+				r = f;
+				z.avail_in--;
+				z.total_in++;
+				b = (z.next_in[z.next_in_index++]) & 0xff;
+				this.xlen = (this.xlen >>> 8) | (b << 24);
+				if (this.mode === Mode.EXTRA0) {
+					break;
+				}
+				this.xlen = this.xlen >>> 16;
+				/* falls through */
+
+			case Mode.EXTRA:
+				// track but skip
+				if (z.avail_in === 0) {
+					return r;
+				}
+				r = f;
+				z.avail_in--;
+				z.total_in++;
+				z.next_in_index++;
+				this.xlen--;
+				if (this.xlen === 0) {
+					if (this.gflags & GFlags.FNAME) {
+						this.mode = Mode.NAME;
+					}
+					else if (this.gflags & GFlags.FCOMMENT) {
+						this.mode = Mode.COMMENT;
+					}
+					else if (this.gflags & GFlags.FHCRC) {
+						this.mode = Mode.HCRC0;
+					}
+					else {
+						this.mode = Mode.BLOCKS;
+					}
+				}
 				break;
 
 			case Mode.NAME:
