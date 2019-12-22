@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>sd-zlib tests</title>
+	<script src="../dist/sd-zlib.umd.js"></script>
+</head>
+<body>
+<h1>sd-zlib perf tests</h1>
+<p>See console for results</p>
+<script type="module">
+// @ts-ignore
+const { Deflater, Inflater, inflate, deflate, adler32, crc32, mergeBuffers } = sdZlib;
+
+function makeRec() {
+	return {
+		min: 9999,
+		max: 0,
+		total: 0,
+		count: 0,
+	};
+}
+
+function calc(samp) {
+	// remove extremes
+	samp.sort((a, b) => a - b);
+	samp.pop();
+	samp.shift();
+
+	const r = makeRec();
+	for (const t of samp) {
+		r.count++;
+		r.total += t;
+		if (t > r.max) r.max = t;
+		if (t < r.min) r.min = t;
+	}
+	return r;
+}
+
+const defSamples = [];
+const infSamples = [];
+
+function time(fn) {
+	const t0 = performance.now();
+	fn();
+	const t1 = performance.now();
+	return Math.round(t1 - t0);
+}
+
+function testPerf() {
+	return Promise.all([fetch(`./paradiselost.txt`), fetch(`./paradiselost.deflate`)])
+		.then(([rT, rD]) => Promise.all([rT.arrayBuffer(), rD.arrayBuffer()]))
+		.then(([bT, bD]) => {
+			const text = new Uint8Array(bT);
+			const compressed = new Uint8Array(bD);
+
+			for (let k = 0; k < 20; ++k) {
+				defSamples.push(time(() => deflate(text)));
+				infSamples.push(time(() => inflate(compressed)));
+			}
+
+			const def = calc(defSamples);
+			const inf = calc(infSamples);
+
+			console.info(def);
+			console.info(inf);
+		})
+		.catch(err => {
+			console.warn("Error during test", err);
+			return false;
+		});
+}
+
+
+// -------------------
+
+function runTests() {
+	testPerf();
+}
+
+runTests();
+</script>
+</body>
+</html>
