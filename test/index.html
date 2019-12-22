@@ -110,7 +110,7 @@ function testInflateTextGzip(fileName) {
 
 			// report success
 			const success = result.success && contents === text;
-			console.info("TEST (text-gzip) done", fileName, result.fileName, success, result);
+			console.info("TEST (text-gzip) done", fileName, result.fileName, result.modDate, success, result);
 			return success;
 		})
 		.catch(err => {
@@ -145,7 +145,7 @@ function testRoundTripText(fileName) {
 		.then(([rT]) => Promise.all([rT.arrayBuffer()]))
 		.then(async ([ab]) => {
 			// compress data
-			const deflater = new Deflater({ level: 6 });
+			const deflater = new Deflater({ level: 6, format: "gzip", fileName: `${fileName}.orig` });
 			const t0 = performance.now();
 			const buffers = deflater.append(new Uint8Array(ab));
 			const more = deflater.finish();
@@ -154,13 +154,16 @@ function testRoundTripText(fileName) {
 			const deflated = mergeBuffers(buffers.concat(more));
 			console.info(`Comp size = ${deflated.byteLength}, time = ${time}`);
 
-			const textB = await inflate(deflated);
+			const inflater = new Inflater();
+			const bufs = inflater.append(deflated);
+			const result = inflater.finish();
+			const textB = mergeBuffers(bufs);
 			const text = (new TextDecoder()).decode(textB);
 			const original = (new TextDecoder()).decode(ab);
 
 			// report success
 			const success = original === text;
-			console.info("TEST (C-text) done", fileName, success);
+			console.info("TEST (C-text) done", fileName, result, success);
 			return success;
 		})
 		.catch(err => {
@@ -168,6 +171,44 @@ function testRoundTripText(fileName) {
 			return false;
 		});
 }
+
+function testRoundTripDictionary() {
+	// most used words in paradise lost, concatenated
+	const terms = "andthetoofinhiswithorthatallfromnottheirbutiasaheonbyforsothouthisthywhattheytheehimbehernowthusheavenwhichwhoshallouratmemymoreisgodthenwhenyetthemthoughwhomwasnorwenohadearthuswillwhereiffirstsuchthesehowhavethanmanthroughithighonecanwhilemayfargreattillhathotherintodeatheachherebothwhoseliketherethosedaystoodmightupshethingswerehellsomeeveadamgoodlovelightsoonletyefairstilldownworldosononlyknownightplaceunderlessforthlongairnewpowermuchoutmustownbeforefindwithout";
+	const dictionary = new Uint8Array(Array.from(terms).map(c => c.charCodeAt(0)));
+
+	return Promise.all([fetch(`./paradiselost.txt`)])
+		.then(([rT]) => Promise.all([rT.arrayBuffer()]))
+		.then(([ab]) => {
+			// compress data
+			const deflater = new Deflater({ format: "deflate", dictionary });
+			const t0 = performance.now();
+			const buffers = deflater.append(new Uint8Array(ab));
+			const more = deflater.finish();
+			const time = Math.round(performance.now() - t0);
+
+			const deflated = mergeBuffers(buffers.concat(more));
+			console.info(`Comp size = ${deflated.byteLength}, time = ${time}`);
+
+			const inflater = new Inflater({ dictionary });
+			const bufs = inflater.append(deflated);
+			const result = inflater.finish();
+			const textB = mergeBuffers(bufs);
+			const text = (new TextDecoder()).decode(textB);
+			const original = (new TextDecoder()).decode(ab);
+
+			// report success
+			const success = original === text;
+			console.info("TEST (dict-text) done", result, success);
+			return success;
+		})
+		.catch(err => {
+			console.warn("Error during test (dict-text)", err);
+			return false;
+		});
+
+}
+
 
 // -------------------
 
@@ -182,7 +223,8 @@ function runTests() {
 		testInflateBinary("vertices"),
 
 		testRoundTripText("simple"),
-		testRoundTripText("paradiselost")
+		testRoundTripText("paradiselost"),
+		testRoundTripDictionary()
 	])
 	.then(results => {
 		console.info("DONE");
