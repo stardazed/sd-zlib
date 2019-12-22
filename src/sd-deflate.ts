@@ -33,9 +33,9 @@ export interface DeflaterOptions {
 	level?: number;
 
 	/**
-	 * Provide an optional precalculated lookup dictionary.
-	 * If the container is not set to `deflate` format, then this
-	 * must not be set or you will get an exception.
+	 * Provide an optional precalculated lookup dictionary
+	 * for `deflate` format files. Advanced use case, can result
+	 * in slightly smaller files and improved compression time.
 	 * @default undefined
 	 */
 	dictionary?: BufferSource;

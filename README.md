@@ -124,7 +124,8 @@ The default is almost always the best trade-off.
 
 `dictionary`: BufferSource (default: `undefined`)<br>
 Provide an optional precalculated lookup dictionary for `deflate` format
-files. Advanced use case, can result in slightly smaller files.
+files. Advanced use case, can result in slightly smaller files and
+improved compression time.
 
 ```js
 import { Deflater, mergeBuffers } from "@stardazed/zlib";
