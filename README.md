@@ -18,7 +18,7 @@ If your workflow does not support modules then the UMD file is used and
 the types will be available from the global `sdZlib` in browsers:
 
 ```js
-const { Deflater, Inflater, deflate, inflate, adler32, crc32, mergeBuffers } = sdZLib;
+const { Deflater, Inflater, deflate, inflate, adler32, crc32, mergeBuffers } = sdZlib;
 ```
 
 Decompression
