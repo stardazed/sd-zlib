@@ -12,6 +12,9 @@
 	"module": "dist/sd-zlib.esm.js",
 	"types": "dist/sd-zlib.d.ts",
 	"main": "dist/sd-zlib.esm.js",
+	"files": [
+		"dist/*"
+	],
 	"scripts": {
 		"build": "rollup -c",
 		"prepublishOnly": "rollup -c"

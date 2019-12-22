@@ -1,6 +1,0 @@
-build
-src
-test
-rollup.config.js
-tsconfig.js
-shrinkwrap.yaml
