@@ -8,7 +8,6 @@
  * Based on zlib (c) 1995-2017 Jean-loup Gailly and Mark Adler
  */
 
-import { utf8Decode } from "@stardazed/utf8";
 import { ZLimits, ZStatus, u8ArrayFromBufferSource, PRESET_DICT, Z_DEFLATED, GZIP_ID1, GZIP_ID2 } from "./common";
 import { ZStream } from "./zstream";
 import { InfBlocks } from "./infblocks";
@@ -83,7 +82,7 @@ export class Inflate {
 	// mode dependent information
 	private method = 0; // if FLAGS, method byte
 	private gflags = 0; // if in gzip mode and after FLAG, then contains gzip flags
-	private nameBytes: number[] = [];
+	private name = "";
 	private dictChecksum = 0; // expected checksum of external dictionary
 	private fullChecksum = 0; // expected checksum of original data
 	private inflatedSize = 0; // size in bytes of original data
@@ -106,7 +105,7 @@ export class Inflate {
 	}
 
 	get fileName() {
-		return utf8Decode(new Uint8Array(this.nameBytes));
+		return this.name;
 	}
 
 	get checksum() {
@@ -324,7 +323,8 @@ export class Inflate {
 				b = (z.next_in[z.next_in_index++]) & 0xff;
 				if (b !== 0) {
 					if (this.mode === Mode.NAME) {
-						this.nameBytes.push(b);
+						// file names MUST be ISO-Latin-1, so we can do a byte by byte decoding
+						this.name += String.fromCharCode(b);
 					}
 				}
 				else {

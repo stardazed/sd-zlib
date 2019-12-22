@@ -1,6 +1,5 @@
 devDependencies:
   '@rollup/plugin-node-resolve': 6.0.0_rollup@1.27.13
-  '@stardazed/utf8': 1.1.0
   rollup: 1.27.13
   rollup-plugin-typescript2: 0.25.3_rollup@1.27.13+typescript@3.7.3
   tslib: 1.10.0
@@ -33,10 +32,6 @@ packages:
       rollup: ^1.20.0
     resolution:
       integrity: sha512-qBbGQQaUUiId/lBU9VMeYlVLOoRNvz1fV8HWY5tiGDpI2gdPZHbmOfCjzSdXPhdq3XOfyWvXEBlIPbnM3+9ogQ==
-  /@stardazed/utf8/1.1.0:
-    dev: true
-    resolution:
-      integrity: sha512-PpIrLnK0lk8jrTw+ZDUhFU/J4NDlBZSIz65OLWGTtf/gfE2VGV5H9UzcnzGn+VzU8UMB5Sb663ltg9OJbSQ6PQ==
   /@types/estree/0.0.40:
     dev: true
     resolution:
@@ -237,7 +232,6 @@ packages:
       integrity: sha512-rBJeI5CXAlmy1pV+617WB9J63U6XcazHHF2f2dbJix4XzpUF0RS3Zbj0FGIOCAva5P/d/GBOYaACQ1w+0azUkg==
 specifiers:
   '@rollup/plugin-node-resolve': ^6.0.0
-  '@stardazed/utf8': ^1.1.0
   rollup: ^1.27.13
   rollup-plugin-typescript2: ^0.25.3
   tslib: ^1.10.0
