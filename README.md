@@ -21,6 +21,14 @@ the types will be available from the global `sdZlib` in browsers:
 const { Deflater, Inflater, deflate, inflate, adler32, crc32, mergeBuffers } = sdZlib;
 ```
 
+Error Handling
+--------------
+Every call in this API, including class constructors, can encounter one
+or more errors. Since these errors only occur when data is malformed or when
+the API is used incorrectly, these errors will throw exceptions. The examples
+below do not show error handling for brevity, but in production code be aware
+that all functions can potentially throw.
+
 Decompression
 -------------
 In most cases, just call `inflate` on deflated data and you're done.
@@ -29,10 +37,7 @@ In most cases, just call `inflate` on deflated data and you're done.
 import { inflate } from "@stardazed/zlib";
 
 const deflatedData = /* An ArrayBuffer or a buffer view (e.g. Uint8Array) */;
-inflate(deflatedData).then(
-	data => /* act on decompressed buffer (a Uint8Array) */,
-	error => /* the data was incomplete or invalid */
-);
+const data = inflate(deflatedData);
 ```
 
 `inflate` also takes an optional 2nd argument which is the `dictionary`
@@ -94,10 +99,7 @@ In most cases, just call `deflate` on some data and you're done.
 import { deflate } from "@stardazed/zlib";
 
 const data = /* An ArrayBuffer or a buffer view (e.g. Uint8Array) */;
-deflate(data).then(
-	compressedData => /* act on compressed buffer (a Uint8Array) */,
-	error => /* something went wrong */
-);
+const compressedData = deflate(data);
 ```
 
 `deflate` also takes an optional 2nd parameter for options, see below.

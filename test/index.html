@@ -57,9 +57,9 @@ function testInflateParts(fileName) {
 function testInflateText(fileName) {
 	return Promise.all([fetch(`./${fileName}.deflate`), fetch(`./${fileName}.txt`)])
 		.then(([rD, rT]) => Promise.all([rD.arrayBuffer(), rT.text()]))
-		.then(async ([ab, text]) => {
+		.then(([ab, text]) => {
 			// decompress data
-			const result = await inflate(ab);
+			const result = inflate(ab);
 
 			// check decompressed data against original
 			const contents = (new TextDecoder()).decode(result);
@@ -78,9 +78,9 @@ function testInflateText(fileName) {
 function testInflateTextRaw(fileName) {
 	return Promise.all([fetch(`./${fileName}.raw`), fetch(`./${fileName}.txt`)])
 		.then(([rD, rT]) => Promise.all([rD.arrayBuffer(), rT.text()]))
-		.then(async ([ab, text]) => {
+		.then(([ab, text]) => {
 			// decompress data
-			const result = await inflate(ab);
+			const result = inflate(ab);
 
 			// check decompressed data against original
 			const contents = (new TextDecoder()).decode(result);
@@ -99,7 +99,7 @@ function testInflateTextRaw(fileName) {
 function testInflateTextGzip(fileName) {
 	return Promise.all([fetch(`./${fileName}.gz`), fetch(`./${fileName}.txt`)])
 		.then(([rD, rT]) => Promise.all([rD.arrayBuffer(), rT.text()]))
-		.then(async ([ab, text]) => {
+		.then(([ab, text]) => {
 			const inflater = new Inflater();
 			// decompress data
 			const data = mergeBuffers(inflater.append(new Uint8Array(ab)));
@@ -143,7 +143,7 @@ function testInflateBinary(fileName) {
 function testRoundTripText(fileName) {
 	return Promise.all([fetch(`./${fileName}.txt`)])
 		.then(([rT]) => Promise.all([rT.arrayBuffer()]))
-		.then(async ([ab]) => {
+		.then(([ab]) => {
 			// compress data
 			const deflater = new Deflater({ level: 6, format: "gzip", fileName: `${fileName}.orig` });
 			const t0 = performance.now();

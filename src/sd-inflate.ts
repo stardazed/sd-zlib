@@ -174,53 +174,49 @@ export class Inflater {
 }
 
 /**
- * inflate does the right thing for almost all situations and provides
- * a simple, Promise-based way to inflate (decompress) data. It detects
- * any headers and will act appropriately. Unless you need more control
- * over the inflate process, it is recommended to use this function.
+ * inflate provides a simple way to inflate (decompress) data.
+ * It auto-detects the data format and will act appropriately.
  * @param data a buffer or buffer view on the deflated data
  * @param dictionary optional preset DEFLATE dictionary
- * @returns a promise to the decompressed data
+ * @returns the decompressed data
  */
 export function inflate(data: BufferSource, dictionary?: BufferSource) {
-	return new Promise<Uint8Array>((resolve, reject) => {
-		const input = u8ArrayFromBufferSource(data);
-		if (! (input instanceof Uint8Array)) {
-			throw new TypeError("data must be an ArrayBuffer or buffer view");
+	const input = u8ArrayFromBufferSource(data);
+	if (! (input instanceof Uint8Array)) {
+		throw new TypeError("data must be an ArrayBuffer or buffer view");
+	}
+	if (input.length < 2) {
+		throw new Error("data buffer is too small");
+	}
+
+	const options: InflaterOptions = {
+		dictionary
+	};
+
+	// check for a deflate or gzip header
+	const [method, flag] = input;
+	const startsWithIdent =
+		/* DEFLATE */ (method === 0x78 && ((((method << 8) + flag) % 31) === 0)) ||
+		/* GZIP */ (method === 0x1F && flag === 0x8B);
+	options.raw = !startsWithIdent;
+
+	// single chunk inflate
+	const inflater = new Inflater(options);
+	const buffers = inflater.append(input);
+	const result = inflater.finish();
+
+	if (! result.success) {
+		if (! result.complete) {
+			throw new Error("Unexpected EOF during decompression");
 		}
-		if (input.length < 2) {
-			throw new Error("data buffer is too small");
+		if (result.checksum === "mismatch") {
+			throw new Error("Data integrity check failed");
 		}
-
-		const options: InflaterOptions = {
-			dictionary
-		};
-
-		// check for a deflate or gzip header
-		const [method, flag] = input;
-		const startsWithIdent =
-			/* DEFLATE */ (method === 0x78 && ((((method << 8) + flag) % 31) === 0)) ||
-			/* GZIP */ (method === 0x1F && flag === 0x8B);
-		options.raw = !startsWithIdent;
-
-		// single chunk inflate
-		const inflater = new Inflater(options);
-		const buffers = inflater.append(input);
-		const result = inflater.finish();
-
-		if (! result.success) {
-			if (! result.complete) {
-				return reject("Unexpected EOF during decompression");
-			}
-			if (result.checksum === "mismatch") {
-				return reject("Data integrity check failed");
-			}
-			if (result.fileSize === "mismatch") {
-				return reject("Data size check failed");
-			}
-			return reject("Decompression error");
+		if (result.fileSize === "mismatch") {
+			throw new Error("Data size check failed");
 		}
+		throw new Error("Decompression error");
+	}
 
-		resolve(mergeBuffers(buffers));
-	});
+	return mergeBuffers(buffers);
 }
