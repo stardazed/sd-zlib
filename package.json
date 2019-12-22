@@ -1,17 +1,17 @@
 {
-	"name": "@stardazed/gzip",
-	"description": "GZip library implementation",
+	"name": "@stardazed/zlib",
+	"description": "Zlib library implementation",
 	"version": "1.0.0",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/stardazed/sd-gzip.git"
+		"url": "https://github.com/stardazed/sd-zlib.git"
 	},
-	"homepage": "https://github.com/stardazed/sd-gzip",
+	"homepage": "https://github.com/stardazed/sd-zlib",
 	"license": "Zlib",
-	"browser": "dist/sd-gzip.esm.js",
-	"module": "dist/sd-gzip.esm.js",
-	"types": "dist/sd-gzip.d.ts",
-	"main": "dist/sd-gzip.esm.js",
+	"browser": "dist/sd-zlib.esm.js",
+	"module": "dist/sd-zlib.esm.js",
+	"types": "dist/sd-zlib.d.ts",
+	"main": "dist/sd-zlib.esm.js",
 	"scripts": {
 		"build": "rollup -c",
 		"prepublishOnly": "rollup -c"

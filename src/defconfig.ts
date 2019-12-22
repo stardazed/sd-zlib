@@ -1,9 +1,12 @@
 /**
- * gzip/defconfig - deflate configurations per level
+ * zlib/defconfig - deflate configurations per level
  * Part of Stardazed
  * (c) 2018-Present by Arthur Langereis - @zenmumbler
- * https://github.com/stardazed/sd-gzip
- */
+ * https://github.com/stardazed/sd-zlib
+ *
+ * Based on zip.js (c) 2013 by Gildas Lormeau
+ * Based on zlib (c) 1995-2017 Jean-loup Gailly and Mark Adler
+*/
 
 export const enum ZFunc {
 	STORED = 0,

@@ -2,16 +2,16 @@
 <html lang="en">
 <head>
 	<meta charset="utf-8">
-	<title>sd-gzip tests</title>
-	<script src="../dist/sd-gzip.umd.js"></script>
+	<title>sd-zlib tests</title>
+	<script src="../dist/sd-zlib.umd.js"></script>
 </head>
 <body>
-<h1>sd-gzip tests</h1>
+<h1>sd-zlib tests</h1>
 <p>See console for results</p>
 <script type="module">
 // @ts-check
 /**
- * Just a quick manual testing page to check deflate results.
+ * Just a quick manual testing page for @stardazed/zlib
  *
  * The text .deflate files were made by using gzip on some text files and manually
  * changing the file format to:
@@ -26,7 +26,7 @@
  */
 
 // @ts-ignore
-const { Deflater, Inflater, inflate, adler32, crc32, mergeBuffers } = sdGZip;
+const { Deflater, Inflater, inflate, adler32, crc32, mergeBuffers } = sdZLib;
 
 function testInflateParts(fileName) {
 	return Promise.all([fetch(`./${fileName}.part1.deflate`), fetch(`./${fileName}.part2.deflate`), fetch(`./${fileName}.txt`)])

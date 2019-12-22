@@ -1,10 +1,10 @@
 /**
- * @stardazed/gzip - GZip library implementation
+ * @stardazed/zlib - Zlib library implementation
  * Part of Stardazed
  * (c) 2018-Present by Arthur Langereis - @zenmumbler
- * https://github.com/stardazed/sd-gzip
+ * https://github.com/stardazed/sd-zlib
  *
- * Copyright (c) 2013 Gildas Lormeau. All rights reserved.
+ * zip.js Copyright (c) 2013 Gildas Lormeau. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -29,7 +29,6 @@
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
  *
  * This program is based on JZlib 1.0.2 ymnk, JCraft,Inc.
  * JZlib is based on zlib-1.1.3, so all credit should go authors
