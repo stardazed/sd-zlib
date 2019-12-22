@@ -36,6 +36,12 @@ export interface DeflaterOptions {
 	 * @default undefined
 	 */
 	dictionary?: BufferSource;
+
+	/**
+	 * Provide an optional file name for the data being compressed.
+	 * Only affects output if format is set to `gzip`.
+	 */
+	fileName?: string;
 }
 
 export class Deflater {
@@ -45,11 +51,13 @@ export class Deflater {
 	private origSize = 0; // size in bytes of source data
 	private dictChecksum = 0;
 	private format: "raw" | "deflate" | "gzip";
+	private fileName: string;
 
 	constructor(options?: DeflaterOptions) {
 		const level = options?.level ?? 6;
 		const format = options?.format ?? "deflate";
 		const dictionary = options?.dictionary;
+		const fileName = options?.fileName;
 
 		if (typeof level !== "number" || level < 0 || level > 9) {
 			throw new RangeError("level must be between 0 and 9, inclusive");
@@ -57,6 +65,10 @@ export class Deflater {
 		if (format !== "gzip" && format !== "raw" && format !== "deflate") {
 			throw new RangeError("container must be one of `raw`, `deflate`, `gzip`");
 		}
+		if (typeof fileName !== undefined && typeof fileName !== "string") {
+			throw new TypeError("fileName must be a string");
+		}
+		this.fileName = fileName || "";
 
 		this.z = new ZStream();
 		this.deflate = new Deflate(this.z, level, ZStrategy.DEFAULT_STRATEGY);
@@ -99,11 +111,26 @@ export class Deflater {
 	}
 
 	private buildGZipHeader() {
-		const buf = new ArrayBuffer(10);
+		let flag = 0;
+		let fileNameBytes: number[] = [];
+		if (this.fileName.length > 0) {
+			flag |= 0x08; // FNAME
+
+			// spec says fileName must be iso-latin-1
+			// this is simulated here in a very crude way
+			fileNameBytes = Array.from(this.fileName)
+				.map(c => {
+					const cc = c.charCodeAt(0);
+					return cc > 0xff ? 95 : cc // 95 = _
+				});
+			fileNameBytes.push(0); // trailing zero for c-string
+		}
+
+		const buf = new ArrayBuffer(10 + fileNameBytes.length);
 		const dv = new DataView(buf);
 
 		dv.setUint16(0, (GZIP_ID1 << 8) | GZIP_ID2); // ID1, ID2
-		dv.setUint16(2, (Z_DEFLATED << 8) | 0); // CM, FLG
+		dv.setUint16(2, (Z_DEFLATED << 8) | flag); // CM, FLG
 
 		// MTIME (LSB)
 		const time = Math.floor(Date.now() / 1000);
@@ -111,7 +138,13 @@ export class Deflater {
 
 		dv.setUint16(8, (0 << 8) | 0xff); // XFL, OS
 
-		return new Uint8Array(buf);
+		// fileName (optional)
+		const ua = new Uint8Array(buf);
+		if (fileNameBytes.length) {
+			ua.set(fileNameBytes, 10);
+		}
+
+		return ua;
 	}
 
 	private buildTrailer() {
