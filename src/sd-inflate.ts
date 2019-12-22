@@ -37,11 +37,17 @@ export interface InflaterOptions {
 }
 
 export interface InflateResult {
+	/** overall indicator of proper decompression */
 	success: boolean;
+	/** was the input data complete? */
 	complete: boolean;
+	/** data validity check result */
 	checksum: "match" | "mismatch" | "unchecked";
+	/** data size check result (gzip only) */
 	fileSize: "match" | "mismatch" | "unchecked";
+	/** stored original file name (gzip only, "" otherwise) */
 	fileName: string;
+	/** stored modifcation date (gzip only) */
 	modDate: Date | undefined;
 }
 

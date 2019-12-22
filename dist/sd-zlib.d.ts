@@ -31,8 +31,8 @@ export interface InflateResult {
 	/** was the input data complete? */
 	complete: boolean;
 	/** data validity check result */
-	checkSum: "match" | "mismatch" | "unchecked";
-	/** dats size check result (gzip only) */
+	checksum: "match" | "mismatch" | "unchecked";
+	/** data size check result (gzip only) */
 	fileSize: "match" | "mismatch" | "unchecked";
 	/** stored original file name (gzip only, "" otherwise) */
 	fileName: string;
