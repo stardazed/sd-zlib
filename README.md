@@ -1,7 +1,7 @@
 @stardazed/zlib
 ===============
 Compress and decompress data with the deflate algorithm, and read and
-write this data in zlib, gzip or raw format containers.
+write this data in deflate, gzip or raw format containers.
 
 Installation & Usage
 --------------------
@@ -31,7 +31,7 @@ that all functions can potentially throw.
 
 Decompression
 -------------
-In most cases, just call `inflate` on deflated data and you're done.
+In most cases, call `inflate` on compressed data and you're done.
 
 ```js
 import { inflate } from "@stardazed/zlib";
@@ -74,12 +74,12 @@ const result = inflater.finish();
 
 // result object layout:
 {
-	success: boolean; // overall indicator of proper decompression
-	complete: boolean; // was the input data complete?
-	checksum: "match" | "mismatch" | "unchecked"; // data validity result
-	fileSize: "match" | "mismatch" | "unchecked"; // size check result (gzip only)
-	fileName: string; // stored original file name (gzip only, "" otherwise)
-	modDate: Date | undefined; // stored modification date (gzip only)
+    success: boolean; // overall indicator of proper decompression
+    complete: boolean; // was the input data complete?
+    checksum: "match" | "mismatch" | "unchecked"; // data validity result
+    fileSize: "match" | "mismatch" | "unchecked"; // size check result (gzip only)
+    fileName: string; // stored original file name (gzip only, "" otherwise)
+    modDate: Date | undefined; // stored modification date (gzip only)
 }
 ```
 
@@ -93,7 +93,7 @@ a new `Inflater` instance.
 
 Compression
 -----------
-In most cases, just call `deflate` on some data and you're done.
+In most cases, call `deflate` on some data and you're done.
 
 ```js
 import { deflate } from "@stardazed/zlib";
@@ -109,21 +109,21 @@ If you want to stream in data chunks as you receive them, then use the
 
 The `Deflater` class and the `deflate` function take the following options:
 
-`format`: `"raw" | "deflate" | "gzip"` (default: `"deflate"`)
+`format`: `"raw" | "deflate" | "gzip"` (default: `"deflate"`)<br>
 Specifies what container is to be used for the output. `raw` outputs
 no metadata at all.
 
-`fileName`: string (default: `undefined`)
+`fileName`: string (default: `undefined`)<br>
 Provide an optional file name for the data being compressed.
 Only affects output if format is set to `gzip`.
 
-`level`: 1..9 (default: `6`)
+`level`: 1..9 (default: `6`)<br>
 Specifies how hard deflate will try to compress your data. Higher
-means smaller but also slower and there are diminishing returns at
-some point. The default is almost always the best trade-off.
+means smaller but also slower and there are diminishing returns.
+The default is almost always the best trade-off.
 
 `dictionary`: BufferSource (default: `undefined`)<br>
-Provide an optional precalculated lookup dictionary for deflate format
+Provide an optional precalculated lookup dictionary for `deflate` format
 files. Advanced use case, can result in slightly smaller files.
 
 ```js
@@ -134,11 +134,11 @@ const outputs = [];
 
 // then, each time a new chunk of data becomes available:
 outputs.push(...deflater.append(data)); // ArrayBuffer or buffer view
-// append returns an array of zero or more `Uint8Array`s
+// append returns an array of zero or more Uint8Arrays
 
 // when all data has been appended:
 outputs.push(...inflater.finish());
-// finish also returns an array of zero or more `Uint8Array`s
+// finish also returns an array of zero or more Uint8Arrays
 
 // use the built-in mergeBuffers utility to merge all outputs together
 const data = mergeBuffers(outputs);
@@ -160,9 +160,9 @@ import { adler32, crc32 } from "@stardazed/zlib";
 let a = 1; // initial seed for adler32
 let c = 0; // initial seed for crc32
 for (const data of my_magical_data_fountain) {
-	// data can be an ArrayBuffer or a buffer view (e.g. Uint8Array)
-	a = adler32(data, a);
-	c = crc32(data, c);
+    // data can be an ArrayBuffer or a buffer view (e.g. Uint8Array)
+    a = adler32(data, a);
+    c = crc32(data, c);
 }
 ```
 Keep feeding in the resulting checksum as the seed for the next step to
