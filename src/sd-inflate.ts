@@ -172,25 +172,25 @@ export class Inflater {
 
 /**
  * inflate does the right thing for almost all situations and provides
- * a simple, Promise-based way to inflate data. It detects any headers
- * and will act appropriately. Unless you need more control over the
- * inflate process, it is recommended to use this function.
+ * a simple, Promise-based way to inflate (decompress) data. It detects
+ * any headers and will act appropriately. Unless you need more control
+ * over the inflate process, it is recommended to use this function.
  * @param data a buffer or buffer view on the deflated data
- * @param deflateDictionary optional preset DEFLATE dictionary
- * @returns a promise to the re-inflated data
+ * @param dictionary optional preset DEFLATE dictionary
+ * @returns a promise to the decompressed data
  */
-export function inflate(data: BufferSource, deflateDictionary?: BufferSource) {
+export function inflate(data: BufferSource, dictionary?: BufferSource) {
 	return new Promise<Uint8Array>((resolve, reject) => {
 		const input = u8ArrayFromBufferSource(data);
 		if (! (input instanceof Uint8Array)) {
-			throw new TypeError("data must be a buffer or buffer view");
+			throw new TypeError("data must be an ArrayBuffer or buffer view");
 		}
 		if (input.length < 2) {
-			throw new TypeError("data buffer is too small");
+			throw new Error("data buffer is too small");
 		}
 
 		const options: InflaterOptions = {
-			dictionary: deflateDictionary
+			dictionary
 		};
 
 		// check for a deflate or gzip header
