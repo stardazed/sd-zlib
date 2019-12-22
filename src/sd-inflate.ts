@@ -5,7 +5,7 @@
  * https://github.com/stardazed/sd-gzip
  */
 
-import { ZStatus, u8ArrayFromBufferSource } from "./common";
+import { ZStatus, u8ArrayFromBufferSource, mergeBuffers } from "./common";
 import { ZStream, OUTPUT_BUFSIZE } from "./zstream";
 import { Inflate, ContainerFormat } from "./inflate";
 import { crc32 } from "./crc32";
@@ -165,18 +165,6 @@ export class Inflater {
 			fileName
 		};
 	}
-}
-
-export function mergeBuffers(buffers: Uint8Array[]) {
-	const totalSize = buffers.map(b => b.byteLength).reduce((s, l) => s + l, 0);
-	const output = new Uint8Array(totalSize);
-
-	let offset = 0;
-	for (const buf of buffers) {
-		output.set(buf, offset);
-		offset += buf.length;
-	}
-	return output;
 }
 
 /**
