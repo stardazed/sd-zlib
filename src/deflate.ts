@@ -8,12 +8,12 @@ Based on zip.js (c) 2013 by Gildas Lormeau
 Based on zlib (c) 1995-Present Jean-loup Gailly and Mark Adler
 */
 
-import { ZDeflateHeap, ZStatus, ZFlush, ZStrategy } from "./common";
+import { ZDeflateHeap, ZStatus, ZFlush, ZStrategy, ZLimits } from "./common";
 import { Tree, StaticTree, L_CODES, D_CODES, BL_CODES, HEAP_SIZE, LITERALS } from "./deftree";
 import { ZStream, ZPendingBuffer } from "./zstream";
 import { config_table, ZFunc } from "./defconfig";
 
-function smaller(tree: number[], n: number, m: number, depth: number[]) {
+function smaller(tree: ArrayLike<number>, n: number, m: number, depth: ArrayLike<number>) {
 	const tn2 = tree[n * 2];
 	const tm2 = tree[m * 2];
 	return (tn2 < tm2 || (tn2 == tm2 && depth[n] <= depth[m]));
@@ -55,11 +55,13 @@ const MIN_LOOKAHEAD = (MAX_MATCH + MIN_MATCH + 1);
 
 // --------------------------
 // [AL] the following were configurable, no more
-const w_bits = 15; // log2(w_size) (8..16)
-const w_size = 1 << w_bits; // LZ77 window size (32K by default)
-const w_mask = w_size - 1;
+const enum DC {
+	w_bits = 15, // log2(DC.w_size) (8..16)
+	w_size = 1 << w_bits, // LZ77 window size (32K by default)
+	w_mask = DC.w_size - 1,
+}
 
-const hash_bits = 16; // MAX_MEM_LEVEL (9) + 7
+const hash_bits = 8 + 7; // memLevel (9) + 7
 const hash_size = 1 << hash_bits;
 const hash_mask = hash_size - 1;
 // Number of bits by which ins_h must be shifted at each input
@@ -85,7 +87,7 @@ const hash_shift = Math.floor((hash_bits + MIN_MATCH - 1) / MIN_MATCH);
 // fast adaptation but have of course the overhead of transmitting
 // trees more frequently.
 // - I can't count above 4
-const lit_bufsize = 1 << (9 + 6); // 16K elements by default (9 is memLevel)
+const lit_bufsize = 1 << (8 + 6); // 16K elements by default (9 is memLevel)
 // We overlay pending_buf and d_buf+l_buf. This works since the average
 // output size for (length,distance) codes is <= 24 bits.
 const pending_buf_size = lit_bufsize * 4;
@@ -94,7 +96,7 @@ const l_buf = (1 + 2) * lit_bufsize; // index for literals or lengths
 
 // Actual size of window: 2*wSize, except when the user input buffer
 // is directly used as sliding window.
-const window_size = 2 * w_size;
+const window_size = 2 * DC.w_size;
 
 
 export class Deflate implements ZDeflateHeap, ZPendingBuffer {
@@ -116,12 +118,12 @@ export class Deflate implements ZDeflateHeap, ZPendingBuffer {
 	// To do: use the user input buffer as sliding window.
 	window = new Uint8Array(window_size);
 
-	prev: number[] = [];
+	prev = new Uint16Array(DC.w_size);
 	// Link to older string with same hash index. To limit the size of this
 	// array to 64K, this link is maintained only for the last 32K strings.
 	// An index in this array is thus a window index modulo 32K.
 
-	head: number[] = []; // Heads of the hash chains or NIL.
+	head = new Uint16Array(hash_size); // Heads of the hash chains or NIL.
 
 	ins_h = 0; // hash index of string to be inserted
 
@@ -157,16 +159,16 @@ export class Deflate implements ZDeflateHeap, ZPendingBuffer {
 	// levels >= 4.
 	max_lazy_match: number;
 
-	dyn_ltree: number[] = []; // literal and length tree
-	dyn_dtree: number[] = []; // distance tree
-	bl_tree: number[] = []; // Huffman tree for bit lengths
+	dyn_ltree = new Uint16Array(HEAP_SIZE * 2); // literal and length tree
+	dyn_dtree = new Uint16Array((2 * D_CODES + 1) * 2); // distance tree
+	bl_tree = new Uint16Array((2 * BL_CODES + 1) * 2); // Huffman tree for bit lengths
 
 	l_desc = new Tree(this.dyn_ltree, StaticTree.static_l_desc); // desc for literal tree
 	d_desc = new Tree(this.dyn_dtree, StaticTree.static_d_desc); // desc for distance tree
 	bl_desc = new Tree(this.bl_tree, StaticTree.static_bl_desc); // desc for bit length tree
 
 	// Depth of each subtree used as tie breaker for trees of equal frequency
-	public depth: number[] = [];
+	public depth = new Uint16Array(2 * L_CODES + 1);
 
 	last_lit = 0; // running index in l_buf
 	matches = 0; // number of string matches in current block
@@ -184,10 +186,10 @@ export class Deflate implements ZDeflateHeap, ZPendingBuffer {
 	bi_valid = 0;
 
 	// number of codes at each bit length for an optimal tree
-	public bl_count: number[] = [];
+	public bl_count = new Uint16Array(ZLimits.MAX_BITS + 1);
 
 	// heap used to build the Huffman trees
-	public heap: number[] = [];
+	public heap = new Uint16Array(2 * L_CODES + 1);
 	public heap_len = 0;
 	public heap_max = HEAP_SIZE;
 
@@ -236,7 +238,7 @@ export class Deflate implements ZDeflateHeap, ZPendingBuffer {
 	// stopping
 	// when the heap property is re-established (each father smaller than its
 	// two sons).
-	pqdownheap(tree: number[], // the tree to restore
+	pqdownheap(tree: Uint16Array, // the tree to restore
 		k: number // node to move down
 	) {
 		const heap = this.heap;
@@ -262,7 +264,7 @@ export class Deflate implements ZDeflateHeap, ZPendingBuffer {
 
 	// Scan a literal or distance tree to determine the frequencies of the codes
 	// in the bit length tree.
-	private scan_tree(tree: number[],// the tree to be scanned
+	private scan_tree(tree: Uint16Array,// the tree to be scanned
 		max_code: number // and its largest code of non zero frequency
 	) {
 		var prevlen = -1; // last emitted length
@@ -360,14 +362,14 @@ export class Deflate implements ZDeflateHeap, ZPendingBuffer {
 		}
 	}
 
-	private send_code(c: number, tree: number[]) {
+	private send_code(c: number, tree: Uint16Array) {
 		const c2 = c * 2;
 		this.send_bits(tree[c2] & 0xffff, tree[c2 + 1] & 0xffff);
 	}
 
 	// Send a literal or distance tree in compressed form, using the codes in
 	// bl_tree.
-	private send_tree(tree: number[],// the tree to be sent
+	private send_tree(tree: Uint16Array,// the tree to be sent
 		max_code: number // and its largest code of non zero frequency
 	) {
 		var prevlen = -1; // last emitted length
@@ -515,7 +517,7 @@ export class Deflate implements ZDeflateHeap, ZPendingBuffer {
 	}
 
 	// Send the block data compressed using the given Huffman trees
-	private compress_block(ltree: number[], dtree: number[]) {
+	private compress_block(ltree: Uint16Array, dtree: Uint16Array) {
 		// var dist; // distance of matched string
 		// var lc; // match length or unmatched char (if dist === 0)
 		let lx = 0; // running index in l_buf
@@ -685,7 +687,7 @@ export class Deflate implements ZDeflateHeap, ZPendingBuffer {
 
 			// Deal with !@#$% 64K limit:
 			if (more === 0 && this.strstart === 0 && this.lookahead === 0) {
-				more = w_size;
+				more = DC.w_size;
 			} else if (more === -1) {
 				// Very unlikely, but possible on 16 bit machine if strstart == 0
 				// and lookahead == 1 (input done one byte at time)
@@ -695,12 +697,12 @@ export class Deflate implements ZDeflateHeap, ZPendingBuffer {
 				// lookahead,
 				// move the upper half to the lower one to make room in the
 				// upper half.
-			} else if (this.strstart >= w_size + w_size - MIN_LOOKAHEAD) {
-				this.window.set(this.window.subarray(w_size, w_size + w_size), 0);
+			} else if (this.strstart >= DC.w_size + DC.w_size - MIN_LOOKAHEAD) {
+				this.window.set(this.window.subarray(DC.w_size, DC.w_size + DC.w_size), 0);
 
-				this.match_start -= w_size;
-				this.strstart -= w_size; // we now have strstart >= MAX_DIST
-				this.block_start -= w_size;
+				this.match_start -= DC.w_size;
+				this.strstart -= DC.w_size; // we now have strstart >= MAX_DIST
+				this.block_start -= DC.w_size;
 
 				// Slide the hash table (could be avoided with 32 bit values
 				// at the expense of memory usage). We slide even when level == 0
@@ -712,18 +714,18 @@ export class Deflate implements ZDeflateHeap, ZPendingBuffer {
 				let p = n;
 				do {
 					let m = (this.head[--p] & 0xffff);
-					this.head[p] = (m >= w_size ? m - w_size : 0);
+					this.head[p] = (m >= DC.w_size ? m - DC.w_size : 0);
 				} while (--n !== 0);
 
-				n = w_size;
+				n = DC.w_size;
 				p = n;
 				do {
 					let m = (this.prev[--p] & 0xffff);
-					this.prev[p] = (m >= w_size ? m - w_size : 0);
+					this.prev[p] = (m >= DC.w_size ? m - DC.w_size : 0);
 					// If n is not on any hash chain, prev[n] is garbage but
 					// its value will never be used.
 				} while (--n !== 0);
-				more += w_size;
+				more += DC.w_size;
 			}
 
 			if (this.strm.avail_in === 0)
@@ -800,7 +802,7 @@ export class Deflate implements ZDeflateHeap, ZPendingBuffer {
 
 			// Flush if we may have to slide, otherwise block_start may become
 			// negative and the data will be gone:
-			if (this.strstart - this.block_start >= w_size - MIN_LOOKAHEAD) {
+			if (this.strstart - this.block_start >= DC.w_size - MIN_LOOKAHEAD) {
 				this.flush_block_only(false);
 				if (this.strm.avail_out === 0)
 					return BState.NeedMore;
@@ -818,9 +820,9 @@ export class Deflate implements ZDeflateHeap, ZPendingBuffer {
 		let chain_length = this.max_chain_length; // max hash chain length
 		let scan = this.strstart; // current string
 		// var match; // matched string
-		var len; // length of current match
+		// var len; // length of current match
 		let best_len = this.prev_length; // best match length so far
-		let limit = this.strstart > (w_size - MIN_LOOKAHEAD) ? this.strstart - (w_size - MIN_LOOKAHEAD) : 0;
+		let limit = this.strstart > (DC.w_size - MIN_LOOKAHEAD) ? this.strstart - (DC.w_size - MIN_LOOKAHEAD) : 0;
 		let _nice_match = this.nice_match;
 
 		// Stop when cur_match becomes <= limit. To simplify the code,
@@ -828,7 +830,7 @@ export class Deflate implements ZDeflateHeap, ZPendingBuffer {
 
 		const strend = this.strstart + MAX_MATCH;
 		let scan_end1 = this.window[scan + best_len - 1];
-		var scan_end = this.window[scan + best_len];
+		let scan_end = this.window[scan + best_len];
 
 		// The code is optimized for HASH_BITS >= 8 and MAX_MATCH-2 multiple of
 		// 16.
@@ -844,14 +846,16 @@ export class Deflate implements ZDeflateHeap, ZPendingBuffer {
 		if (_nice_match > this.lookahead)
 			_nice_match = this.lookahead;
 
+		const win = this.window;
+
 		do {
 			let match = cur_match;
 
 			// Skip to next match if the match length cannot increase
 			// or if the match length is less than 2:
-			if (this.window[match + best_len] !== scan_end || this.window[match + best_len - 1] !== scan_end1
-				|| this.window[match] !== this.window[scan]
-				|| this.window[++match] !== this.window[scan + 1])
+			if (win[match + best_len] !== scan_end || win[match + best_len - 1] !== scan_end1
+				|| win[match] !== win[scan]
+				|| win[++match] !== win[scan + 1])
 				continue;
 
 			// The check at best_len-1 can be removed because it will be made
@@ -865,11 +869,11 @@ export class Deflate implements ZDeflateHeap, ZPendingBuffer {
 			// We check for insufficient lookahead only every 8th comparison;
 			// the 256th check will be made at strstart+258.
 			do {
-			} while (this.window[++scan] === this.window[++match] && this.window[++scan] === this.window[++match] && this.window[++scan] === this.window[++match]
-				&& this.window[++scan] === this.window[++match] && this.window[++scan] === this.window[++match] && this.window[++scan] === this.window[++match]
-				&& this.window[++scan] === this.window[++match] && this.window[++scan] === this.window[++match] && scan < strend);
+			} while (win[++scan] === win[++match] && win[++scan] === win[++match] && win[++scan] === win[++match]
+				&& win[++scan] === win[++match] && win[++scan] === win[++match] && win[++scan] === win[++match]
+				&& win[++scan] === win[++match] && win[++scan] === win[++match] && scan < strend);
 
-			len = MAX_MATCH - (strend - scan);
+			let len = MAX_MATCH - (strend - scan);
 			scan = strend - MAX_MATCH;
 
 			if (len > best_len) {
@@ -877,11 +881,11 @@ export class Deflate implements ZDeflateHeap, ZPendingBuffer {
 				best_len = len;
 				if (len >= _nice_match)
 					break;
-				scan_end1 = this.window[scan + best_len - 1];
-				scan_end = this.window[scan + best_len];
+				scan_end1 = win[scan + best_len - 1];
+				scan_end = win[scan + best_len];
 			}
 
-		} while ((cur_match = (this.prev[cur_match & w_mask] & 0xffff)) > limit && --chain_length !== 0);
+		} while ((cur_match = this.prev[cur_match & DC.w_mask]) > limit && --chain_length !== 0);
 
 		if (best_len <= this.lookahead)
 			return best_len;
@@ -917,16 +921,16 @@ export class Deflate implements ZDeflateHeap, ZPendingBuffer {
 			if (this.lookahead >= MIN_MATCH) {
 				this.ins_h = ((this.ins_h << hash_shift) ^ (this.window[(this.strstart) + (MIN_MATCH - 1)] & 0xff)) & hash_mask;
 
-				// prev[strstart&w_mask]=hash_head=head[ins_h];
+				// prev[strstart&DC.w_mask]=hash_head=head[ins_h];
 				hash_head = (this.head[this.ins_h] & 0xffff);
-				this.prev[this.strstart & w_mask] = this.head[this.ins_h];
+				this.prev[this.strstart & DC.w_mask] = this.head[this.ins_h];
 				this.head[this.ins_h] = this.strstart;
 			}
 
 			// Find the longest match, discarding those <= prev_length.
 			// At this point we have always match_length < MIN_MATCH
 
-			if (hash_head !== 0 && ((this.strstart - hash_head) & 0xffff) <= w_size - MIN_LOOKAHEAD) {
+			if (hash_head !== 0 && ((this.strstart - hash_head) & 0xffff) <= DC.w_size - MIN_LOOKAHEAD) {
 				// To simplify the code, we prevent matches with the string
 				// of window index 0 (in particular we have to avoid a match
 				// of the string with itself at the start of the input file).
@@ -950,9 +954,9 @@ export class Deflate implements ZDeflateHeap, ZPendingBuffer {
 						this.strstart++;
 
 						this.ins_h = ((this.ins_h << hash_shift) ^ (this.window[(this.strstart) + (MIN_MATCH - 1)] & 0xff)) & hash_mask;
-						// prev[strstart&w_mask]=hash_head=head[ins_h];
+						// prev[strstart&DC.w_mask]=hash_head=head[ins_h];
 						hash_head = (this.head[this.ins_h] & 0xffff);
-						this.prev[this.strstart & w_mask] = this.head[this.ins_h];
+						this.prev[this.strstart & DC.w_mask] = this.head[this.ins_h];
 						this.head[this.ins_h] = this.strstart;
 
 						// strstart never exceeds WSIZE-MAX_MATCH, so there are
@@ -1021,9 +1025,9 @@ export class Deflate implements ZDeflateHeap, ZPendingBuffer {
 
 			if (this.lookahead >= MIN_MATCH) {
 				this.ins_h = ((this.ins_h << hash_shift) ^ (this.window[this.strstart + (MIN_MATCH - 1)] & 0xff)) & hash_mask;
-				// prev[strstart&w_mask]=hash_head=head[ins_h];
+				// prev[strstart&DC.w_mask]=hash_head=head[ins_h];
 				hash_head = (this.head[this.ins_h] & 0xffff);
-				this.prev[this.strstart & w_mask] = this.head[this.ins_h];
+				this.prev[this.strstart & DC.w_mask] = this.head[this.ins_h];
 				this.head[this.ins_h] = this.strstart;
 			}
 
@@ -1032,7 +1036,7 @@ export class Deflate implements ZDeflateHeap, ZPendingBuffer {
 			prev_match = this.match_start;
 			this.match_length = MIN_MATCH - 1;
 
-			if (hash_head !== 0 && this.prev_length < this.max_lazy_match && ((this.strstart - hash_head) & 0xffff) <= w_size - MIN_LOOKAHEAD) {
+			if (hash_head !== 0 && this.prev_length < this.max_lazy_match && ((this.strstart - hash_head) & 0xffff) <= DC.w_size - MIN_LOOKAHEAD) {
 				// To simplify the code, we prevent matches with the string
 				// of window index 0 (in particular we have to avoid a match
 				// of the string with itself at the start of the input file).
@@ -1068,9 +1072,9 @@ export class Deflate implements ZDeflateHeap, ZPendingBuffer {
 				do {
 					if (++this.strstart <= max_insert) {
 						this.ins_h = ((this.ins_h << hash_shift) ^ (this.window[(this.strstart) + (MIN_MATCH - 1)] & 0xff)) & hash_mask;
-						// prev[strstart&w_mask]=hash_head=head[ins_h];
+						// prev[strstart&DC.w_mask]=hash_head=head[ins_h];
 						hash_head = (this.head[this.ins_h] & 0xffff);
-						this.prev[this.strstart & w_mask] = this.head[this.ins_h];
+						this.prev[this.strstart & DC.w_mask] = this.head[this.ins_h];
 						this.head[this.ins_h] = this.strstart;
 					}
 				} while (--this.prev_length !== 0);
@@ -1134,8 +1138,8 @@ export class Deflate implements ZDeflateHeap, ZPendingBuffer {
 
 		if (length < MIN_MATCH)
 			return ZStatus.OK;
-		if (length > w_size - MIN_LOOKAHEAD) {
-			length = w_size - MIN_LOOKAHEAD;
+		if (length > DC.w_size - MIN_LOOKAHEAD) {
+			length = DC.w_size - MIN_LOOKAHEAD;
 			index = dictLength - length; // use the tail of the dictionary
 		}
 		this.window.set(dictionary.subarray(index, index + length), 0);
@@ -1152,7 +1156,7 @@ export class Deflate implements ZDeflateHeap, ZPendingBuffer {
 
 		for (n = 0; n <= length - MIN_MATCH; n++) {
 			this.ins_h = ((this.ins_h << hash_shift) ^ (this.window[n + (MIN_MATCH - 1)] & 0xff)) & hash_mask;
-			this.prev[n & w_mask] = this.head[this.ins_h];
+			this.prev[n & DC.w_mask] = this.head[this.ins_h];
 			this.head[this.ins_h] = n;
 		}
 		return ZStatus.OK;

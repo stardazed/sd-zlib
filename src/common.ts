@@ -74,16 +74,16 @@ export interface ZBuffer {
 }
 
 export interface ZDeflateHeap {
-	heap: number[];
+	heap: Uint16Array;
 	heap_len: number;
 	heap_max: number;
 	opt_len: number;
 	static_len: number;
 
-	depth: number[];
-	bl_count: number[];
+	depth: Uint16Array;
+	bl_count: Uint16Array;
 
-	pqdownheap(tree: number[], k: number): void;
+	pqdownheap(tree: Uint16Array, k: number): void;
 }
 
 /**

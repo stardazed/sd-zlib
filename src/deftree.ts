@@ -38,11 +38,11 @@ const _dist_code = [0, 1, 2, 3, 4, 4, 5, 5, 6, 6, 6, 6, 7, 7, 7, 7, 8, 8, 8, 8, 
 	29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29];
 
 export class Tree {
-	readonly dyn_tree: number[]; // the dynamic tree
+	readonly dyn_tree: Uint16Array; // the dynamic tree
 	readonly stat_desc: StaticTree; // the corresponding static tree
 	max_code: number; // largest code with non zero frequency
 
-	constructor(tree: number[], desc: StaticTree) {
+	constructor(tree: Uint16Array, desc: StaticTree) {
 		this.dyn_tree = tree;
 		this.stat_desc = desc;
 		this.max_code = 0;
@@ -152,20 +152,17 @@ export class Tree {
 	// the given tree and the field len is set for all tree elements.
 	// OUT assertion: the field code is set for all tree elements of non
 	// zero code length.
-	private gen_codes(tree: number[], // the tree to decorate
+	private gen_codes(tree: Uint16Array, // the tree to decorate
 		max_code: number, // largest code with non zero frequency
-		bl_count: number[] // number of codes at each bit length
+		bl_count: Uint16Array // number of codes at each bit length
 	) {
-		var next_code = []; // next code value for each
+		const next_code = new Uint16Array(ZLimits.MAX_BITS + 1); // next code value for each
 		// bit length
-		var code = 0; // running code value
-		var bits; // bit index
-		var n; // code index
-		var len;
+		let code = 0; // running code value
 
 		// The distribution counts are first used to generate the code values
 		// without bit reversal.
-		for (bits = 1; bits <= ZLimits.MAX_BITS; bits++) {
+		for (let bits = 1; bits <= ZLimits.MAX_BITS; bits++) {
 			next_code[bits] = code = ((code + bl_count[bits - 1]) << 1);
 		}
 
@@ -175,8 +172,8 @@ export class Tree {
 		// "inconsistent bit counts");
 		// Tracev((stderr,"\ngen_codes: max_code %d ", max_code));
 
-		for (n = 0; n <= max_code; n++) {
-			len = tree[n * 2 + 1];
+		for (let n = 0; n <= max_code; n++) {
+			const len = tree[n * 2 + 1];
 			if (len === 0)
 				continue;
 			// Now reverse the bits
@@ -305,13 +302,13 @@ export class Tree {
 // StaticTree
 
 export class StaticTree {
-	static_tree: number[] | null;
+	static_tree: Uint16Array | null;
 	extra_bits: number[];
 	extra_base: number;
 	elems: number;
 	max_length: number;
 
-	constructor(static_tree: number[] | null, extra_bits: number[], extra_base: number, elems: number, max_length: number) {
+	constructor(static_tree: Uint16Array | null, extra_bits: number[], extra_base: number, elems: number, max_length: number) {
 		this.static_tree = static_tree;
 		this.extra_bits = extra_bits;
 		this.extra_base = extra_base;
@@ -319,7 +316,7 @@ export class StaticTree {
 		this.max_length = max_length;
 	}
 
-	static static_ltree = [12, 8, 140, 8, 76, 8, 204, 8, 44, 8, 172, 8, 108, 8, 236, 8, 28, 8, 156, 8, 92, 8, 220, 8, 60, 8, 188, 8, 124, 8, 252, 8, 2, 8,
+	static static_ltree = new Uint16Array([12, 8, 140, 8, 76, 8, 204, 8, 44, 8, 172, 8, 108, 8, 236, 8, 28, 8, 156, 8, 92, 8, 220, 8, 60, 8, 188, 8, 124, 8, 252, 8, 2, 8,
 		130, 8, 66, 8, 194, 8, 34, 8, 162, 8, 98, 8, 226, 8, 18, 8, 146, 8, 82, 8, 210, 8, 50, 8, 178, 8, 114, 8, 242, 8, 10, 8, 138, 8, 74, 8, 202, 8, 42,
 		8, 170, 8, 106, 8, 234, 8, 26, 8, 154, 8, 90, 8, 218, 8, 58, 8, 186, 8, 122, 8, 250, 8, 6, 8, 134, 8, 70, 8, 198, 8, 38, 8, 166, 8, 102, 8, 230, 8,
 		22, 8, 150, 8, 86, 8, 214, 8, 54, 8, 182, 8, 118, 8, 246, 8, 14, 8, 142, 8, 78, 8, 206, 8, 46, 8, 174, 8, 110, 8, 238, 8, 30, 8, 158, 8, 94, 8,
@@ -335,9 +332,9 @@ export class StaticTree {
 		223, 9, 479, 9, 63, 9, 319, 9, 191, 9, 447, 9, 127, 9, 383, 9, 255, 9, 511, 9, 0, 7, 64, 7, 32, 7, 96, 7, 16, 7, 80, 7, 48, 7, 112, 7, 8, 7, 72, 7,
 		40, 7, 104, 7, 24, 7, 88, 7, 56, 7, 120, 7, 4, 7, 68, 7, 36, 7, 100, 7, 20, 7, 84, 7, 52, 7, 116, 7, 3, 8, 131, 8, 67, 8, 195, 8, 35, 8, 163, 8,
 		99, 8, 227, 8
-	];
-	static static_dtree = [0, 5, 16, 5, 8, 5, 24, 5, 4, 5, 20, 5, 12, 5, 28, 5, 2, 5, 18, 5, 10, 5, 26, 5, 6, 5, 22, 5, 14, 5, 30, 5, 1, 5, 17, 5, 9, 5,
-		25, 5, 5, 5, 21, 5, 13, 5, 29, 5, 3, 5, 19, 5, 11, 5, 27, 5, 7, 5, 23, 5];
+	]);
+	static static_dtree = new Uint16Array([0, 5, 16, 5, 8, 5, 24, 5, 4, 5, 20, 5, 12, 5, 28, 5, 2, 5, 18, 5, 10, 5, 26, 5, 6, 5, 22, 5, 14, 5, 30, 5, 1, 5, 17, 5, 9, 5,
+		25, 5, 5, 5, 21, 5, 13, 5, 29, 5, 3, 5, 19, 5, 11, 5, 27, 5, 7, 5, 23, 5]);
 
 	static static_l_desc = new StaticTree(StaticTree.static_ltree, Tree.extra_lbits, LITERALS + 1, L_CODES, ZLimits.MAX_BITS);
 

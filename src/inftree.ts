@@ -93,7 +93,7 @@ const u = new Int32Array(BMAX);     // table stack
 const x = new Int32Array(BMAX + 1); // bit offsets, then code stack
 
 function huft_build(
-	b: number[],  // code lengths in bits (all assumed <= BMAX)
+	b: ArrayLike<number>,  // code lengths in bits (all assumed <= BMAX)
 	bindex: number, n: number, // number of codes (assumed <= 288)
 	s: number,  // number of simple-valued codes (0..s-1)
 	d: number[] | null,  // list of base values for non-simple codes
@@ -311,7 +311,7 @@ function initWorkArea(vsize: number) {
 }
 
 export function inflate_trees_bits(
-	c: number[], // 19 code lengths
+	c: ArrayLike<number>, // 19 code lengths
 	bb: InOut<number>, // bits tree desired/actual depth
 	tb: InOut<number>, // bits tree result
 	hp: Int32Array, // space for trees
@@ -333,7 +333,7 @@ export function inflate_trees_bits(
 export function inflate_trees_dynamic(
 	nl: number, // number of literal/length codes
 	nd: number, // number of distance codes
-	c: number[], // that many (total) code lengths
+	c: ArrayLike<number>, // that many (total) code lengths
 	bl: InOut<number>, // literal desired/actual bit depth
 	bd: InOut<number>, // distance desired/actual bit depth
 	tl: InOut<number>, // literal/length tree result

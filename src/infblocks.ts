@@ -135,7 +135,7 @@ export class InfBlocks implements ZBuffer {
 
 		let table = 0; // table lengths (14 bits)
 		let index = 0; // index into blens (or border)
-		let blens: number[] = []; // bit lengths of codes
+		const blens = new Uint8Array(320); // bit lengths of codes (258 + 31 + 31)
 		const bb: InOut<number> = [0]; // bit length tree depth
 		const tb: InOut<number> = [0]; // bit length decoding tree
 
@@ -366,12 +366,8 @@ export class InfBlocks implements ZBuffer {
 					return this.inflate_flush(z, r);
 				}
 				t = 258 + (t & 0x1f) + ((t >> 5) & 0x1f);
-				if (blens.length < t) {
-					blens = []; // new Array(t);
-				} else {
-					for (i = 0; i < t; i++) {
-						blens[i] = 0;
-					}
+				for (i = 0; i < t; i++) {
+					blens[i] = 0;
 				}
 
 				// {
