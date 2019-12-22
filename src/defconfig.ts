@@ -31,14 +31,14 @@ const makeConfig = (gl: number, ml: number, nl: number, mc: number, func: ZFunc)
 });
 
 export const config_table: Config[] = [
-	makeConfig(0, 0, 0, 0, ZFunc.STORED),
-	makeConfig(4, 4, 8, 4, ZFunc.FAST),
-	makeConfig(4, 5, 16, 8, ZFunc.FAST),
-	makeConfig(4, 6, 32, 32, ZFunc.FAST),
-	makeConfig(4, 4, 16, 16, ZFunc.SLOW),
-	makeConfig(8, 16, 32, 32, ZFunc.SLOW),
-	makeConfig(8, 16, 128, 128, ZFunc.SLOW),
-	makeConfig(8, 32, 128, 256, ZFunc.SLOW),
-	makeConfig(32, 128, 258, 1024, ZFunc.SLOW),
-	makeConfig(32, 258, 258, 4096, ZFunc.SLOW)
+/* 0 */	makeConfig(0, 0, 0, 0, ZFunc.STORED),
+/* 1 */	makeConfig(4, 4, 8, 4, ZFunc.FAST),
+/* 2 */	makeConfig(4, 5, 16, 8, ZFunc.FAST),
+/* 3 */	makeConfig(4, 6, 32, 32, ZFunc.FAST),
+/* 4 */	makeConfig(4, 4, 16, 16, ZFunc.SLOW),
+/* 5 */	makeConfig(8, 16, 32, 32, ZFunc.SLOW),
+/* 6 */	makeConfig(8, 16, 128, 128, ZFunc.SLOW),
+/* 7 */	makeConfig(8, 32, 128, 256, ZFunc.SLOW),
+/* 8 */	makeConfig(32, 128, 258, 1024, ZFunc.SLOW),
+/* 9 */	makeConfig(32, 258, 258, 4096, ZFunc.SLOW)
 ];
