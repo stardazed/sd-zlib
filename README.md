@@ -88,7 +88,7 @@ for broken input streams is not an error, but the details are given
 for you to act upon in whatever manner is suitable. Use the `success`
 field for most use cases.
 
-You cannot reuse an `Inflater` instance, to decompress another source, create
+⚠️ You cannot reuse an `Inflater` instance, to decompress another source, create
 a new `Inflater` instance.
 
 Compression
@@ -144,7 +144,7 @@ outputs.push(...inflater.finish());
 const data = mergeBuffers(outputs);
 ```
 
-You cannot reuse a `Deflater` instance, to compress another source, create
+⚠️ You cannot reuse a `Deflater` instance, to compress another source, create
 a new `Deflater` instance.
 
 Checksums
