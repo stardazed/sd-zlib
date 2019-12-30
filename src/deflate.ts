@@ -337,13 +337,13 @@ export class Deflate implements ZDeflateHeap, ZPendingBuffer {
 
 		return max_blindex;
 	}
-
+/*
 	// Output a byte on the stream.
 	// IN assertion: there is enough room in pending_buf.
 	private put_byte(b: number) {
 		this.pending_buf[this.pending++] = b;
 	}
-
+*/
 	private put_short(w: number) {
 		this.pending_buf[this.pending++] = w & 0xff;
 		this.pending_buf[this.pending++] = (w >>> 8) & 0xff;
@@ -353,7 +353,13 @@ export class Deflate implements ZDeflateHeap, ZPendingBuffer {
 		if (this.bi_valid > 16 - length) {
 			// bi_buf |= (val << bi_valid);
 			this.bi_buf |= ((value << this.bi_valid) & 0xffff);
-			this.put_short(this.bi_buf);
+
+			const pending = this.pending;
+			this.pending_buf[pending] = this.bi_buf;
+			this.pending_buf[pending + 1] = (this.bi_buf >>> 8);
+			this.pending = pending + 2;
+			// ^ this.put_short(this.bi_buf);
+
 			this.bi_buf = value >>> (16 - this.bi_valid);
 			this.bi_valid += length - 16;
 		} else {
@@ -443,7 +449,8 @@ export class Deflate implements ZDeflateHeap, ZPendingBuffer {
 			this.bi_buf = 0;
 			this.bi_valid = 0;
 		} else if (this.bi_valid >= 8) {
-			this.put_byte(this.bi_buf & 0xff);
+			this.pending_buf[this.pending++] = this.bi_buf;
+			// ^ this.put_byte(this.bi_buf & 0xff);
 			this.bi_buf >>>= 8;
 			this.bi_valid -= 8;
 		}
@@ -568,7 +575,8 @@ export class Deflate implements ZDeflateHeap, ZPendingBuffer {
 		if (this.bi_valid > 8) {
 			this.put_short(this.bi_buf);
 		} else if (this.bi_valid > 0) {
-			this.put_byte(this.bi_buf & 0xff);
+			this.pending_buf[this.pending++] = this.bi_buf;
+			// this.put_byte(this.bi_buf & 0xff);
 		}
 		this.bi_buf = 0;
 		this.bi_valid = 0;
