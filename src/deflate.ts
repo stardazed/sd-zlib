@@ -824,13 +824,16 @@ export class Deflate implements ZDeflateHeap, ZPendingBuffer {
 		let best_len = this.prev_length; // best match length so far
 		let limit = this.strstart > (DC.w_size - MIN_LOOKAHEAD) ? this.strstart - (DC.w_size - MIN_LOOKAHEAD) : 0;
 		let _nice_match = this.nice_match;
+		const win = this.window;
 
 		// Stop when cur_match becomes <= limit. To simplify the code,
 		// we prevent matches with the string of window index 0.
 
 		const strend = this.strstart + MAX_MATCH;
-		let scan_end1 = this.window[scan + best_len - 1];
-		let scan_end = this.window[scan + best_len];
+		let scan_end1 = win[scan + best_len - 1];
+		let scan_end = win[scan + best_len];
+		const scan_start = win[scan];
+		const scan_start1 = win[scan + 1];
 
 		// The code is optimized for HASH_BITS >= 8 and MAX_MATCH-2 multiple of
 		// 16.
@@ -846,33 +849,75 @@ export class Deflate implements ZDeflateHeap, ZPendingBuffer {
 		if (_nice_match > this.lookahead)
 			_nice_match = this.lookahead;
 
-		const win = this.window;
-
 		do {
 			let match = cur_match;
 
+			let cont = true;
+			do {
+				match = cur_match;
+				if (win[match + best_len] !== scan_end || win[match + best_len - 1] !== scan_end1) {
+					if ((cur_match = this.prev[cur_match & DC.w_mask]) > limit && --chain_length !== 0) {
+						continue;
+					}
+					else {
+						cont = false;
+					}
+				}
+				break;
+			} while (true);
+
+			if (! cont) {
+				break;
+			}
+
+			if (win[match] !== scan_start || win[match + 1] !== scan_start1)
+				continue;
+			// if (* (ushf *)match != scan_start)
+			//    continue;
+
+/*
 			// Skip to next match if the match length cannot increase
 			// or if the match length is less than 2:
 			if (win[match + best_len] !== scan_end || win[match + best_len - 1] !== scan_end1
 				|| win[match] !== win[scan]
-				|| win[++match] !== win[scan + 1])
+				|| win[match + 1] !== win[scan + 1])
 				continue;
-
+*/
 			// The check at best_len-1 can be removed because it will be made
 			// again later. (This heuristic is not always a win.)
 			// It is not necessary to compare scan[2] and match[2] since they
 			// are always equal when the other bytes match, given this
 			// the hash keys are equal and this HASH_BITS >= 8.
 			scan += 2;
-			match++;
+			match += 2;
 
 			// We check for insufficient lookahead only every 8th comparison;
 			// the 256th check will be made at strstart+258.
 			do {
+				const sv = (win[scan] << 24) | (win[scan + 1] << 16) | (win[scan + 2] << 8) | win[scan + 3];
+				const mv = (win[match] << 24) | (win[match + 1] << 16) | (win[match + 2] << 8) | win[match + 3];
+				const sxm = sv ^ mv;
+				if (sxm) {
+					const match_byte = Math.clz32(sxm) >> 3;
+					scan += match_byte;
+					match += match_byte;
+					break;
+				}
+				else {
+					scan += 4;
+					match += 4;
+				}
+			} while (scan < strend);
+
+			if (scan > strend) {
+				scan = strend;
+			}
+/*
+			do {
 			} while (win[++scan] === win[++match] && win[++scan] === win[++match] && win[++scan] === win[++match]
 				&& win[++scan] === win[++match] && win[++scan] === win[++match] && win[++scan] === win[++match]
 				&& win[++scan] === win[++match] && win[++scan] === win[++match] && scan < strend);
-
+*/
 			let len = MAX_MATCH - (strend - scan);
 			scan = strend - MAX_MATCH;
 
