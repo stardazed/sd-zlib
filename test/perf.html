@@ -53,7 +53,7 @@ function out(x) {
 }
 
 function testPerf() {
-	return Promise.all([fetch(`./paradiselost.txt`), fetch(`./paradiselost.deflate`)])
+	return Promise.all([fetch(`./paradiselost.txt`), fetch(`./paradiselost.gz`)])
 		.then(([rT, rD]) => Promise.all([rT.arrayBuffer(), rD.arrayBuffer()]))
 		.then(([bT, bD]) => {
 			const text = new Uint8Array(bT);
