@@ -138,11 +138,11 @@ outputs.push(...deflater.append(data)); // ArrayBuffer or buffer view
 // append returns an array of zero or more Uint8Arrays
 
 // when all data has been appended:
-outputs.push(...inflater.finish());
+outputs.push(...deflater.finish());
 // finish also returns an array of zero or more Uint8Arrays
 
 // use the built-in mergeBuffers utility to merge all outputs together
-const data = mergeBuffers(outputs);
+const compressedData = mergeBuffers(outputs);
 ```
 
 ⚠️ You cannot reuse a `Deflater` instance, to compress another source, create
