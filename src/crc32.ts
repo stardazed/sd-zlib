@@ -177,7 +177,17 @@ function computeCRC32Big(buf: Uint8Array, crc = 0) {
  * @internal
  */
 function makeCRCTables() {
-	const tables: Uint32Array[] = new Array(8).fill(256).map(c => new Uint32Array(c));
+	const buf = new ArrayBuffer(256 * 4 * 8);
+	const tables = [
+		new Uint32Array(buf, 256 * 4 * 0, 256),
+		new Uint32Array(buf, 256 * 4 * 1, 256),
+		new Uint32Array(buf, 256 * 4 * 2, 256),
+		new Uint32Array(buf, 256 * 4 * 3, 256),
+		new Uint32Array(buf, 256 * 4 * 4, 256),
+		new Uint32Array(buf, 256 * 4 * 5, 256),
+		new Uint32Array(buf, 256 * 4 * 6, 256),
+		new Uint32Array(buf, 256 * 4 * 7, 256)
+	];
 
 	// generate a crc for every 8-bit value
 	for (let n = 0; n < 256; n++) {
