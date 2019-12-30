@@ -47,6 +47,11 @@ function time(fn) {
 	return Math.round(t1 - t0);
 }
 
+function out(x) {
+	const j = JSON.stringify(x);
+	document.getElementById("res").textContent += `${j}\n`;
+}
+
 function testPerf() {
 	return Promise.all([fetch(`./paradiselost.txt`), fetch(`./paradiselost.deflate`)])
 		.then(([rT, rD]) => Promise.all([rT.arrayBuffer(), rD.arrayBuffer()]))
@@ -62,6 +67,8 @@ function testPerf() {
 			const def = calc(defSamples);
 			const inf = calc(infSamples);
 
+			out(def);
+			out(inf);
 			console.info(def);
 			console.info(inf);
 		})
@@ -80,5 +87,6 @@ function runTests() {
 
 runTests();
 </script>
+<code id="res"></code>
 </body>
 </html>
