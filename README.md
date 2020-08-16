@@ -171,8 +171,8 @@ continue the checksum generation.
 
 Copyright
 ---------
-(c) Arthur Langereis (@zenmumbler): conversion to TypeScript, modularized,
-modernized, optimized and extended<br>
+(c) @zenmumbler: conversion to TypeScript, modularized, modernized,
+optimized and extended<br>
 Based on zip.js (c) 2013 by Gildas Lormeau: https://gildas-lormeau.github.io/zip.js/<br>
 zip.js is based on JZlib 1.0.2 ymnk, JCraft,Inc.<br>
 Based on zlib (c) 1995-Present Jean-loup Gailly and Mark Adler<br>

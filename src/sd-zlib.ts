@@ -1,7 +1,7 @@
 /*
 @stardazed/zlib - Zlib library implementation
 Part of Stardazed
-(c) 2018-Present by Arthur Langereis - @zenmumbler
+(c) 2018-Present by @zenmumbler
 https://github.com/stardazed/sd-zlib
 
 zip.js Copyright (c) 2013 Gildas Lormeau. All rights reserved.
