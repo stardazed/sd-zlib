@@ -20,10 +20,10 @@
 		"prepublishOnly": "rollup -c"
 	},
 	"devDependencies": {
-		"@rollup/plugin-node-resolve": "^6.0.0",
-		"rollup": "^1.27.13",
-		"rollup-plugin-typescript2": "^0.25.3",
-		"tslib": "^1.10.0",
-		"typescript": "^3.7.4"
+		"@rollup/plugin-node-resolve": "^9.0.0",
+		"rollup": "^2.26.3",
+		"rollup-plugin-typescript2": "^0.27.2",
+		"tslib": "^2.0.1",
+		"typescript": "^3.9.7"
 	}
 }
