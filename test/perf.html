@@ -60,7 +60,16 @@ function testPerf() {
 			const compressed = new Uint8Array(bD);
 
 			for (let k = 0; k < 20; ++k) {
-				defSamples.push(time(() => deflate(text)));
+				// Lvl Bytes  CTime   RelSize Diff   CTime Factor
+				// L9: 193162 (49-57)  41.00%        2.86x
+				// L6: 193730 (39-48)  41.12% +568   2.35x
+				// L5: 197239 (28-35)  41.86% +3509  2.08x
+				// L4: 203828 (19-24)  43.26% +6589  1.19x
+				// L3: 207545 (19-24)  44.05% +3717  1.19x
+				// L2: 216830 (15-22)  46.02% +9285  1.00x
+				// L1: 226188 (15-22)  48.00% +9358  1.00x
+				// U : 471162         100.00%
+				defSamples.push(time(() => deflate(text, { level: 4 })));
 				infSamples.push(time(() => inflate(compressed)));
 			}
 
@@ -87,6 +96,6 @@ function runTests() {
 
 runTests();
 </script>
-<code id="res"></code>
+<pre id="res"></pre>
 </body>
 </html>
