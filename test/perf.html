@@ -2,15 +2,14 @@
 <html lang="en">
 <head>
 	<meta charset="utf-8">
-	<title>sd-zlib tests</title>
-	<script src="../dist/sd-zlib.umd.js"></script>
+	<title>sd-zlib perf tests</title>
 </head>
 <body>
 <h1>sd-zlib perf tests</h1>
 <p>See console for results</p>
 <script type="module">
-// @ts-ignore
-const { Deflater, Inflater, inflate, deflate, adler32, crc32, mergeBuffers } = sdZlib;
+// @ts-check
+import { Deflater, Inflater, inflate, deflate, adler32, crc32, mergeBuffers } from "../dist/sd-zlib.js";
 
 function makeRec() {
 	return {

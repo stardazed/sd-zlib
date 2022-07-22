@@ -3,7 +3,6 @@
 <head>
 	<meta charset="utf-8">
 	<title>sd-zlib tests</title>
-	<script src="../dist/sd-zlib.umd.js"></script>
 </head>
 <body>
 <h1>sd-zlib tests</h1>
@@ -25,8 +24,7 @@
  * and running gzip on them, storing them unaltered
  */
 
-// @ts-ignore
-const { Deflater, Inflater, inflate, adler32, crc32, mergeBuffers } = sdZlib;
+import { Deflater, Inflater, inflate, adler32, crc32, mergeBuffers } from "../dist/sd-zlib.js";
 
 function testInflateParts(fileName) {
 	return Promise.all([fetch(`./${fileName}.part1.deflate`), fetch(`./${fileName}.part2.deflate`), fetch(`./${fileName}.txt`)])

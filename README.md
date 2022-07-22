@@ -7,19 +7,11 @@ Installation & Usage
 --------------------
 ```
 pnpm add @stardazed/zlib
-npm install @stardazed/zlib
 yarn add @stardazed/zlib
+npm install @stardazed/zlib
 ```
 
-This library comes with a full set of TypeScript types.
-
-In module based workflows import from `@stardazed/zlib`, see examples below.
-If your workflow does not support modules then the UMD file is used and
-the types will be available from the global `sdZlib` in browsers:
-
-```js
-const { Deflater, Inflater, deflate, inflate, adler32, crc32, mergeBuffers } = sdZlib;
-```
+This library is only available as an ES module. The interface is fully typed.
 
 Error Handling
 --------------

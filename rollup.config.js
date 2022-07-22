@@ -18,17 +18,10 @@ export default [
 		input: "src/sd-zlib.ts",
 		output: [
 			{
-				file: "dist/sd-zlib.esm.js",
+				file: "dist/sd-zlib.js",
 				format: "es",
 				sourcemap: false,
 				intro: banner
-			},
-			{
-				name: "sdZlib",
-				file: "dist/sd-zlib.umd.js",
-				format: "umd",
-				sourcemap: false,
-				intro: banner,
 			}
 		],
 		plugins: [

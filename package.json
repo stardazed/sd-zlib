@@ -8,10 +8,10 @@
 	},
 	"homepage": "https://github.com/stardazed/sd-zlib",
 	"license": "Zlib",
-	"browser": "dist/sd-zlib.esm.js",
-	"module": "dist/sd-zlib.esm.js",
+	"browser": "dist/sd-zlib.js",
+	"module": "dist/sd-zlib.js",
 	"types": "dist/sd-zlib.d.ts",
-	"main": "dist/sd-zlib.esm.js",
+	"main": "dist/sd-zlib.js",
 	"files": [
 		"dist/*"
 	],
